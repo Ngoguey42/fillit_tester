@@ -6,14 +6,14 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2015/12/10 12:27:41 by ngoguey           #+#    #+#             //
-//   Updated: 2015/12/10 15:21:48 by ngoguey          ###   ########.fr       //
+//   Updated: 2015/12/10 15:38:17 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 // // // Uncomment one of those 3
 // #define OUTPUT_MAP_TO_SDTOUT		// ./a.out SIZE
-#define TEST1_BINARY				// ./a.out SIZE BINARY
-// #define TEST2_BINARY				// ./a.out SIZE BINARY1 BINARY2
+// #define TEST1_BINARY				// ./a.out SIZE BINARY
+#define TEST2_BINARY				// ./a.out SIZE BINARY1 BINARY2
 // // // Uncomment one of those 3
 
 #include <iostream>
@@ -139,6 +139,7 @@ void	test(int count)
 		elt.dump();
 		std::cout << std::endl;
 	}
+	return ;
 }
 
 void	test(int count, std::string const bin)
@@ -152,27 +153,102 @@ void	test(int count, std::string const bin)
 	err = ::pipe(pipe);
 	assert(err == 0);
 	std::cout << "\033[31m**********************" << std::endl;
-	test(count);
+	for (auto &elt : vec) {
+		elt.dump();
+		std::cout << std::endl;
+	}
 	std::cout << "**********************\033[0m" << std::endl;
 	pid = ::fork();
 	if (pid == 0)
 	{
 		saveout = ::dup(1);
 		::dup2(pipe[1], 1);
-		test(count);
-		::close(1);
+		for (auto &elt : vec) {
+			elt.dump();
+			std::cout << std::endl;
+		}
+		::close(pipe[1]);
 		::dup2(saveout, 1);
 
 		::dup2(pipe[0], 0);
-		::execve(bin.c_str(), (char *[]){ NULL }, (char *[]){ NULL });
+		::execve(bin.c_str(), (char *[]){NULL}, (char *[]){ NULL });
 		std::cerr << "Could not run " << bin << std::endl;
 		return ;
 	}
 	assert(pid > 0);
+	close(pipe[0]);
+	close(pipe[1]);
+	::wait(&pid);
+	return ;
 }
 
 void	test(int count, std::string const bin1, std::string const bin2)
 {
+	int			pid1, pid2;
+	auto		vec = genPieces(count);
+	int			pipebin1[2];
+	int			pipebin2[2];
+
+	::pipe(pipebin1);
+	::pipe(pipebin2);
+	std::cout << "\033[31m**********************" << std::endl;
+	for (auto &elt : vec) {
+		elt.dump();
+		std::cout << std::endl;
+	}
+	std::cout << "**********************\033[0m" << std::endl;
+	pid1 = ::fork();
+	if (pid1 == 0)
+	{
+		int			pipe[2];
+
+		::pipe(pipe);
+		::dup2(pipe[0], 0);
+		::dup2(pipe[1], 1);
+		for (auto &elt : vec) {
+			elt.dump();
+			std::cout << std::endl;
+		}
+		::close(pipe[1]);
+
+		::close(pipebin1[0]);
+		::dup2(pipebin1[1], 1);
+		::close(pipebin2[0]);
+		::close(pipebin2[1]);
+
+		::execve(bin1.c_str(), (char *[]){NULL}, (char *[]){ NULL });
+		std::cerr << "Could not run " << bin1 << std::endl;
+		return ;
+	}
+	assert(pid1 > 0);
+	pid2 = ::fork();
+	if (pid2 == 0)
+	{
+		int			pipe[2];
+
+		::pipe(pipe);
+		::dup2(pipe[0], 0);
+		::dup2(pipe[1], 1);
+		for (auto &elt : vec) {
+			elt.dump();
+			std::cout << std::endl;
+		}
+		::close(pipe[1]);
+
+		::close(pipebin2[0]);
+		::dup2(pipebin2[1], 1);
+		::close(pipebin1[0]);
+		::close(pipebin1[1]);
+
+		::execve(bin2.c_str(), (char *[]){NULL}, (char *[]){ NULL });
+		std::cerr << "Could not run " << bin2 << std::endl;
+		return ;
+	}
+	assert(pid2 > 0);
+	::wait(&pid1);
+	::wait(&pid2);
+
+	return ;
 
 }
 
