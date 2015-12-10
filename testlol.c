@@ -6,7 +6,7 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/10 20:09:36 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/10 20:36:17 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
@@ -53,36 +53,37 @@ typedef struct
 
 
 
-void		load_indices(t_map m, char *indices[4], t_vec2i c, t_piece const *p)
+void		load_marks(t_map m, char *marks[const 4]
+					   , t_vec2i const c, t_vec2i const dt[const 4])
 {
-	indices[0] = &m[c.y + p->dt[0].y][c.x + p->dt[0].x];
-	indices[1] = &m[c.y + p->dt[1].y][c.x + p->dt[1].x];
-	indices[2] = &m[c.y + p->dt[2].y][c.x + p->dt[2].x];
-	indices[3] = &m[c.y + p->dt[3].y][c.x + p->dt[3].x];
+	marks[0] = &m[c.y + dt[0].y][c.x + dt[0].x];
+	marks[1] = &m[c.y + dt[1].y][c.x + dt[1].x];
+	marks[2] = &m[c.y + dt[2].y][c.x + dt[2].x];
+	marks[3] = &m[c.y + dt[3].y][c.x + dt[3].x];
 	return ;
 }
 
-void		apply_indices(char *const indices[4], t_piece const *p)
+void		apply_marks(char *const marks[const 4], char const c)
 {
-	*indices[0] = p->character;
-	*indices[1] = p->character;
-	*indices[2] = p->character;
-	*indices[3] = p->character;
+	*marks[0] = c;
+	*marks[1] = c;
+	*marks[2] = c;
+	*marks[3] = c;
 	return ;
 }
 
-bool		check_indices(char *const indices[4])
+bool		check_marks(char *const marks[const 4])
 {
-	return (*indices[0] == '.' && *indices[1] == '.'
-			&& *indices[2] == '.' && *indices[3] == '.');
+	return (*marks[0] == '.' && *marks[1] == '.'
+			&& *marks[2] == '.' && *marks[3] == '.');
 }
 
-void		unapply_indices(char *const indices[4])
+void		unapply_marks(char *const marks[const 4])
 {
-	*indices[0] = '.';
-	*indices[1] = '.';
-	*indices[2] = '.';
-	*indices[3] = '.';
+	*marks[0] = '.';
+	*marks[1] = '.';
+	*marks[2] = '.';
+	*marks[3] = '.';
 	return ;
 }
 
@@ -100,53 +101,44 @@ void		unapply_indices(char *const indices[4])
 
 
 
-bool		loop_pieces(t_map m, t_ppool *pool, int w);
+bool		loop_pieces(t_map m, t_ppool *const pool, int const w);
 
-bool		rec(t_map m, t_ppool *pool, int w)
-{
-	if (pool->nfree == 0)
-		return true;
-	return loop_pieces(m, pool, w);
-}
-
-
-bool		loop_coords(t_map m, t_ppool *pool
-						, int w
-						, t_piece *p)
+bool		loop_coords(t_map m, t_ppool *const pool
+						, int const w
+						, t_piece *const p)
 {
 	t_vec2i		c;
-	char		*indices[4];
+	char		*marks[4];
 
-	pool->nfree--;
 	c.y = 0;
 	while (c.y < w - p->h)
 	{
 		c.x = 0;
 		while (c.x < w - p->w)
 		{
-			load_indices(m, indices, c, p);
-			if (check_indices(indices))
+			load_marks(m, marks, c, p->dt);
+			if (check_marks(marks))
 			{
-				apply_indices(indices, p);
+				apply_marks(marks, p->character);
 				p->claimed = true;
-				if (rec(m, pool, w))
+				if (pool->nfree == 0 || loop_pieces(m, pool, w))
 					return true;
 				p->claimed = false;
-				unapply_indices(indices);
+				unapply_marks(marks);
 			}
 			c.x++;
 		}
 		c.y++;
 	}
-	pool->nfree++;
 	return false;
 }
 
-bool		loop_pieces(t_map m, t_ppool *pool
-						, int w)
+bool		loop_pieces(t_map m, t_ppool *const pool
+						, int const w)
 {
 	t_piece		*p;
 
+	pool->nfree--;
 	p = pool->pcs;
 	while (!p->vacant)
 	{
@@ -157,10 +149,11 @@ bool		loop_pieces(t_map m, t_ppool *pool
 		}
 		p++;
 	}
+	pool->nfree++;
 	return false;
 }
 
-bool		loop_sizes(t_map m, t_ppool *pool)
+void		loop_sizes(t_map m, t_ppool *const pool)
 {
 	int		w;
 
@@ -172,7 +165,28 @@ bool		loop_sizes(t_map m, t_ppool *pool)
 			break;
 		w++;
 	}
-	return w;
+	return ;
+}
+
+void		solver(t_ppool pool)
+{
+	char		m[MAP_W][MAP_W];
+	int const	max = 7;
+
+	memset(m, '.', sizeof(m));
+
+	loop_sizes(m, &pool);
+
+	int x, y;
+	for (y = 0; y < 15; y++)
+	{
+		for (x = 0; x < 15; x++)
+		{
+			qprintf("%c ", m[y][x]);
+		}
+		qprintf("\n");
+	}
+	return ;
 }
 
 
@@ -240,9 +254,8 @@ t_piece const	*list[] = {
 #include <unistd.h>
 #include <time.h>
 
-void		entry()
+int							main(void)
 {
-	char		m[MAP_W][MAP_W];
 	t_ppool		pool;
 	int			i;
 	int const	max = 7;
@@ -261,24 +274,6 @@ void		entry()
 	for (i = 'A'; i <= 'Z'; i++) pool.pcs[i - 'A'].character = i;
 	pool.pcs[pool.nfree].vacant = true;
 
-
-	memset(m, '.', sizeof(m));
-	loop_sizes(m, &pool);
-
-	int x, y;
-	for (y = 0; y < 15; y++)
-	{
-		for (x = 0; x < 15; x++)
-		{
-			qprintf("%c ", m[y][x]);
-		}
-		qprintf("\n");
-	}
-	return ;
-}
-
-int							main(void)
-{
-	entry();
+	solver(pool);
 	return (0);
 }
