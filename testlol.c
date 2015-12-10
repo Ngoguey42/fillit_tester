@@ -6,7 +6,7 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/10 20:06:02 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/10 20:09:36 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
@@ -18,21 +18,12 @@
 
 #define qprintf printf
 
-typedef struct	s_dyna
-{
-	void*		data;
-	size_t		chunck_count;
-	size_t		chunck_max;
-	size_t		chunck_size;
-}				t_dyna;
 
 typedef struct	s_vec2i
 {
 	int			x;
 	int			y;
 }				t_vec2i;
-
-/* pool.pcs[0] = (t_piece){false, false, 4, 1, (t_vec2i[]){ */
 
 typedef struct
 {
@@ -53,6 +44,13 @@ typedef struct
 	t_piece		pcs[27];
 	int			nfree;
 }				t_ppool;
+
+
+
+
+
+
+
 
 
 void		load_indices(t_map m, char *indices[4], t_vec2i c, t_piece const *p)
@@ -87,6 +85,20 @@ void		unapply_indices(char *const indices[4])
 	*indices[3] = '.';
 	return ;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 bool		loop_pieces(t_map m, t_ppool *pool, int w);
 
@@ -162,6 +174,19 @@ bool		loop_sizes(t_map m, t_ppool *pool)
 	}
 	return w;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
