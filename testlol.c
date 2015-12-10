@@ -6,7 +6,7 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/10 18:59:27 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/10 20:06:02 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
@@ -64,7 +64,7 @@ void		load_indices(t_map m, char *indices[4], t_vec2i c, t_piece const *p)
 	return ;
 }
 
-void		apply_indices(t_map m, char *indices[4], t_piece const *p)
+void		apply_indices(char *const indices[4], t_piece const *p)
 {
 	*indices[0] = p->character;
 	*indices[1] = p->character;
@@ -73,13 +73,13 @@ void		apply_indices(t_map m, char *indices[4], t_piece const *p)
 	return ;
 }
 
-bool		check_indices(char *indices[4])
+bool		check_indices(char *const indices[4])
 {
 	return (*indices[0] == '.' && *indices[1] == '.'
 			&& *indices[2] == '.' && *indices[3] == '.');
 }
 
-void		unapply_indices(t_map m, char *indices[4])
+void		unapply_indices(char *const indices[4])
 {
 	*indices[0] = '.';
 	*indices[1] = '.';
@@ -88,15 +88,15 @@ void		unapply_indices(t_map m, char *indices[4])
 	return ;
 }
 
-bool		loop_sizes(t_map m, t_ppool *pool);
+bool		loop_pieces(t_map m, t_ppool *pool, int w);
 
-
-bool		rec(t_map m, t_ppool *pool)
+bool		rec(t_map m, t_ppool *pool, int w)
 {
 	if (pool->nfree == 0)
 		return true;
-	return loop_sizes(m, pool);
+	return loop_pieces(m, pool, w);
 }
+
 
 bool		loop_coords(t_map m, t_ppool *pool
 						, int w
@@ -105,7 +105,6 @@ bool		loop_coords(t_map m, t_ppool *pool
 	t_vec2i		c;
 	char		*indices[4];
 
-	qprintf("%s w=%d p=%p\n", __FUNCTION__, w, p);
 	pool->nfree--;
 	c.y = 0;
 	while (c.y < w - p->h)
@@ -116,12 +115,12 @@ bool		loop_coords(t_map m, t_ppool *pool
 			load_indices(m, indices, c, p);
 			if (check_indices(indices))
 			{
-				apply_indices(m, indices, p);
+				apply_indices(indices, p);
 				p->claimed = true;
-				if (rec(m, pool))
+				if (rec(m, pool, w))
 					return true;
 				p->claimed = false;
-				unapply_indices(m, indices);
+				unapply_indices(indices);
 			}
 			c.x++;
 		}
@@ -136,7 +135,6 @@ bool		loop_pieces(t_map m, t_ppool *pool
 {
 	t_piece		*p;
 
-	qprintf("%s w=%d\n", __FUNCTION__, w);
 	p = pool->pcs;
 	while (!p->vacant)
 	{
@@ -155,10 +153,9 @@ bool		loop_sizes(t_map m, t_ppool *pool)
 	int		w;
 
 	w = 2;
-	qprintf("%s\n", __FUNCTION__);
 	while (1)
 	{
-		assert(w <= (MAP_W / 15));
+		qprintf("%s with w=%d\n", __FUNCTION__, w);
 		if (loop_pieces(m, pool, w))
 			break;
 		w++;
@@ -166,29 +163,78 @@ bool		loop_sizes(t_map m, t_ppool *pool)
 	return w;
 }
 
+
+
+t_piece	const	bar = (t_piece){false, false, 4, 1,
+								{
+									(t_vec2i){0, 0},
+									(t_vec2i){1, 0},
+									(t_vec2i){2, 0},
+									(t_vec2i){3, 0},
+								}, '0' };
+t_piece	const	square = (t_piece){false, false, 2, 2,
+								{
+									(t_vec2i){0, 0},
+									(t_vec2i){1, 0},
+									(t_vec2i){1, 1},
+									(t_vec2i){0, 1},
+								}, '0' };
+t_piece	const	z = (t_piece){false, false, 3, 2,
+							  {
+								  (t_vec2i){0, 0},
+								  (t_vec2i){1, 0},
+								  (t_vec2i){1, 1},
+								  (t_vec2i){2, 1},
+							  }, '0' };
+t_piece	const	tr = (t_piece){false, false, 2, 3,
+							  {
+								  (t_vec2i){0, 0},
+								  (t_vec2i){0, 1},
+								  (t_vec2i){0, 2},
+								  (t_vec2i){1, 1},
+							  }, '0' };
+t_piece	const	l = (t_piece){false, false, 2, 3,
+							  {
+								  (t_vec2i){0, 0},
+								  (t_vec2i){0, 1},
+								  (t_vec2i){0, 2},
+								  (t_vec2i){1, 2},
+							  }, '0' };
+
+int const		listsz = 5;
+t_piece const	*list[] = {
+	&bar,
+	&square,
+	&z,
+	&tr,
+	&l,
+};
+
+
+#include <stdlib.h>
+#include <unistd.h>
+#include <time.h>
+
 void		entry()
 {
 	char		m[MAP_W][MAP_W];
 	t_ppool		pool;
+	int			i;
+	int const	max = 7;
+
+	srand(clock());
 
 	bzero(&pool, sizeof(pool)); //debug
 
-	pool.pcs[2].vacant = true;
-	pool.nfree = 2;
-	pool.pcs[0]= (t_piece){false, false, 4, 1,
-					   {
-		(t_vec2i){0, 0},
-		(t_vec2i){1, 0},
-		(t_vec2i){2, 0},
-		(t_vec2i){3, 0},
-	}, 'A' };
-	pool.pcs[1]= (t_piece){false, false, 4, 1,
-					   {
-		(t_vec2i){0, 0},
-		(t_vec2i){1, 0},
-		(t_vec2i){2, 0},
-		(t_vec2i){3, 0},
-	}, 'B' };
+	pool.pcs[0] = bar;
+	for (i = 0; i < max; i++)
+	{
+		pool.pcs[i] = *list[rand() % listsz];
+	}
+	pool.nfree = max;
+
+	for (i = 'A'; i <= 'Z'; i++) pool.pcs[i - 'A'].character = i;
+	pool.pcs[pool.nfree].vacant = true;
 
 
 	memset(m, '.', sizeof(m));
