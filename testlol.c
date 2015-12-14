@@ -111,10 +111,10 @@ bool		loop_coords(t_map m, t_ppool *const pool
 	char		*marks[4];
 
 	c.y = 0;
-	while (c.y < w - p->h)
+	while (c.y <= w - p->h)
 	{
 		c.x = 0;
-		while (c.x < w - p->w)
+		while (c.x <= w - p->w)
 		{
 			load_marks(m, marks, c, p->dt);
 			if (check_marks(marks))

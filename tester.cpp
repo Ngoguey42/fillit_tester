@@ -19,6 +19,11 @@
 // #define TEST2_BINARY				// ./a.out SIZE BINARY1 BINARY2
 // // // Uncomment one of those 4 define
 
+/*
+** Generation:
+** 1/19 chance for each 19 types
+*/
+
 #include <typeinfo>
 #include <sstream>
 #include <algorithm>
@@ -53,16 +58,12 @@ struct piece_t
 		return acc;
 	}
 	void			dump(void) {
-		// std::cout << (void*)(size_t)this->type() << std::endl;
 		std::for_each(std::begin(val), std::end(val)
 					  , [](char l[5]){std::cout << l << '\n';});
 	}
 	void			dump(std::ofstream &os) {
-		// std::cout << (void*)(size_t)this->type() << std::endl;
 		for (auto const &l : val)
 			os << l << '\n';
-		// std::for_each(std::begin(val), std::end(val)
-					  // , [os](char l[5]){os << l << '\n';});
 	}
 	unsigned int				type(void)
 		{
