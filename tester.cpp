@@ -10,22 +10,31 @@
 //                                                                            //
 // ************************************************************************** //
 
-// // // Uncomment one of those 3
-// #define OUTPUT_MAP_TO_SDTOUT		// ./a.out SIZE
-// #define TEST1_BINARY				// ./a.out SIZE BINARY
-#define TEST2_BINARY				// ./a.out SIZE BINARY1 BINARY2
-// // // Uncomment one of those 3
+// clang++ -std=c++14 tester.cpp
 
+// // // Uncomment one of those 4 define
+// #define OUTPUT_113_TO_19FILES	// ./a.out
+#define OUTPUT_MAP_TO_SDTOUT		// ./a.out SIZE
+// #define TEST1_BINARY				// ./a.out SIZE BINARY
+// #define TEST2_BINARY				// ./a.out SIZE BINARY1 BINARY2
+// // // Uncomment one of those 4 define
+
+#include <typeinfo>
+#include <sstream>
+#include <algorithm>
 #include <iostream>
+#include <fstream>
 #include <unordered_map>
 #include <unordered_set>
 #include <array>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <string>
 
 #include <assert.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 struct piece_t
 {
@@ -47,6 +56,13 @@ struct piece_t
 		// std::cout << (void*)(size_t)this->type() << std::endl;
 		std::for_each(std::begin(val), std::end(val)
 					  , [](char l[5]){std::cout << l << '\n';});
+	}
+	void			dump(std::ofstream &os) {
+		// std::cout << (void*)(size_t)this->type() << std::endl;
+		for (auto const &l : val)
+			os << l << '\n';
+		// std::for_each(std::begin(val), std::end(val)
+					  // , [os](char l[5]){os << l << '\n';});
 	}
 	unsigned int				type(void)
 		{
@@ -138,6 +154,26 @@ void	test(int count)
 	{
 		elt.dump();
 		std::cout << std::endl;
+	}
+	return ;
+}
+
+#define STRINGIFY(...) static_cast<std::ostringstream&>(std::ostringstream{}.flush() << __VA_ARGS__).str()
+
+void	to19files()
+{
+	for (auto &id : set)
+	{
+		std::ofstream f;
+		f.open(STRINGIFY(id << ".txt"));
+		auto const			range = map.equal_range(id);
+
+		for (auto it = range.first; it != range.second; ++it)
+		{
+			it->second.dump(f);
+			f << '\n';
+		}
+		f.close();
 	}
 	return ;
 }
@@ -267,6 +303,8 @@ int							main(int ac, char *av[])
 #elif defined(TEST2_BINARY)
 	assert(ac == 4);
 	test(std::atoi(av[1]), av[2], av[3]);
+#elif defined(OUTPUT_113_TO_19FILES)
+	to19files();
 #endif
 	return (0);
 }
