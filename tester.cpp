@@ -292,7 +292,8 @@ int							main(int ac, char *av[])
 {
 	piece_t					p = {"....", "....", "....", "...."};
 
-	std::srand(std::clock());
+	// std::srand(std::clock());
+	std::srand(time(0));
 	gen(p, 0, 0);
 #if defined(OUTPUT_MAP_TO_SDTOUT)
 	assert(ac == 2);
