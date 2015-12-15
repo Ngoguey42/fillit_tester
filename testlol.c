@@ -6,7 +6,7 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/10 20:36:17 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/15 18:28:03 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
@@ -27,8 +27,6 @@ typedef struct	s_vec2i
 
 typedef struct
 {
-	bool		claimed;
-	bool		vacant;
 	int			w;
 	int			h;
 	t_vec2i		dt[4];
@@ -42,7 +40,7 @@ typedef char		t_map[MAP_W][MAP_W];
 typedef struct
 {
 	t_piece		pcs[27];
-	int			nfree;
+	int			lastpid;
 }				t_ppool;
 
 
@@ -92,23 +90,13 @@ void		unapply_marks(char *const marks[const 4])
 
 
 
-
-
-
-
-
-
-
-
-
-bool		loop_pieces(t_map m, t_ppool *const pool, int const w);
-
-bool		loop_coords(t_map m, t_ppool *const pool
+bool		loop_coords(t_map m, t_ppool const *const pool
 						, int const w
-						, t_piece *const p)
+						, int const pid)
 {
-	t_vec2i		c;
-	char		*marks[4];
+	t_vec2i					c;
+	char					*marks[4];
+	t_piece const *const	p = pool->pcs + pid;
 
 	c.y = 0;
 	while (c.y <= w - p->h)
@@ -120,36 +108,14 @@ bool		loop_coords(t_map m, t_ppool *const pool
 			if (check_marks(marks))
 			{
 				apply_marks(marks, p->character);
-				p->claimed = true;
-				if (pool->nfree == 0 || loop_pieces(m, pool, w))
+				if (pid == pool->lastpid || loop_coords(m, pool, w, pid + 1))
 					return true;
-				p->claimed = false;
 				unapply_marks(marks);
 			}
 			c.x++;
 		}
 		c.y++;
 	}
-	return false;
-}
-
-bool		loop_pieces(t_map m, t_ppool *const pool
-						, int const w)
-{
-	t_piece		*p;
-
-	pool->nfree--;
-	p = pool->pcs;
-	while (!p->vacant)
-	{
-		if (!p->claimed)
-		{
-			if (loop_coords(m, pool, w, p))
-				return true;
-		}
-		p++;
-	}
-	pool->nfree++;
 	return false;
 }
 
@@ -161,7 +127,7 @@ void		loop_sizes(t_map m, t_ppool *const pool)
 	while (1)
 	{
 		qprintf("%s with w=%d\n", __FUNCTION__, w);
-		if (loop_pieces(m, pool, w))
+		if (loop_coords(m, pool, w, 0))
 			break;
 		w++;
 	}
@@ -190,65 +156,27 @@ void		solver(t_ppool pool)
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-t_piece	const	bar = (t_piece){false, false, 4, 1,
-								{
-									(t_vec2i){0, 0},
-									(t_vec2i){1, 0},
-									(t_vec2i){2, 0},
-									(t_vec2i){3, 0},
-								}, '0' };
-t_piece	const	square = (t_piece){false, false, 2, 2,
-								{
-									(t_vec2i){0, 0},
-									(t_vec2i){1, 0},
-									(t_vec2i){1, 1},
-									(t_vec2i){0, 1},
-								}, '0' };
-t_piece	const	z = (t_piece){false, false, 3, 2,
-							  {
-								  (t_vec2i){0, 0},
-								  (t_vec2i){1, 0},
-								  (t_vec2i){1, 1},
-								  (t_vec2i){2, 1},
-							  }, '0' };
-t_piece	const	tr = (t_piece){false, false, 2, 3,
-							  {
-								  (t_vec2i){0, 0},
-								  (t_vec2i){0, 1},
-								  (t_vec2i){0, 2},
-								  (t_vec2i){1, 1},
-							  }, '0' };
-t_piece	const	l = (t_piece){false, false, 2, 3,
-							  {
-								  (t_vec2i){0, 0},
-								  (t_vec2i){0, 1},
-								  (t_vec2i){0, 2},
-								  (t_vec2i){1, 2},
-							  }, '0' };
-
-int const		listsz = 5;
-t_piece const	*list[] = {
-	&bar,
-	&square,
-	&z,
-	&tr,
-	&l,
+t_piece const pcs[] = {
+	(t_piece){2, 3, {{1, 0},{0, 1},{1, 1},{0, 2},}, '0'},
+	(t_piece){3, 2, {{1, 0},{0, 1},{1, 1},{2, 1},}, '0'},
+	(t_piece){2, 3, {{1, 0},{1, 1},{0, 2},{1, 2},}, '0'},
+	(t_piece){2, 3, {{1, 0},{0, 1},{1, 1},{1, 2},}, '0'},
+	(t_piece){3, 2, {{1, 0},{2, 0},{0, 1},{1, 1},}, '0'},
+	(t_piece){2, 3, {{0, 0},{0, 1},{1, 1},{0, 2},}, '0'},
+	(t_piece){3, 2, {{0, 0},{1, 0},{2, 0},{1, 1},}, '0'},
+	(t_piece){3, 2, {{0, 0},{0, 1},{1, 1},{2, 1},}, '0'},
+	(t_piece){3, 2, {{0, 0},{1, 0},{1, 1},{2, 1},}, '0'},
+	(t_piece){1, 4, {{0, 0},{0, 1},{0, 2},{0, 3},}, '0'},
+	(t_piece){2, 3, {{0, 0},{1, 0},{0, 1},{0, 2},}, '0'},
+	(t_piece){3, 2, {{0, 0},{1, 0},{2, 0},{2, 1},}, '0'},
+	(t_piece){2, 3, {{0, 0},{0, 1},{0, 2},{1, 2},}, '0'},
+	(t_piece){2, 2, {{0, 0},{1, 0},{0, 1},{1, 1},}, '0'},
+	(t_piece){2, 3, {{0, 0},{1, 0},{1, 1},{1, 2},}, '0'},
+	(t_piece){3, 2, {{0, 0},{1, 0},{2, 0},{0, 1},}, '0'},
+	(t_piece){3, 2, {{2, 0},{0, 1},{1, 1},{2, 1},}, '0'},
+	(t_piece){2, 3, {{0, 0},{0, 1},{1, 1},{1, 2},}, '0'},
+	(t_piece){4, 1, {{0, 0},{1, 0},{2, 0},{3, 0},}, '0'},
 };
-
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -258,21 +186,20 @@ int							main(void)
 {
 	t_ppool		pool;
 	int			i;
-	int const	max = 7;
+	int const	max = 12;
 
+	srand(0);
 	srand(clock());
 
 	bzero(&pool, sizeof(pool)); //debug
 
-	pool.pcs[0] = bar;
 	for (i = 0; i < max; i++)
 	{
-		pool.pcs[i] = *list[rand() % listsz];
+		pool.pcs[i] = pcs[rand() % sizeof(pcs) / sizeof(*pcs)];
 	}
-	pool.nfree = max;
+	pool.lastpid = max - 1;
 
 	for (i = 'A'; i <= 'Z'; i++) pool.pcs[i - 'A'].character = i;
-	pool.pcs[pool.nfree].vacant = true;
 
 	solver(pool);
 	return (0);
