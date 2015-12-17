@@ -6,7 +6,7 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/15 18:28:03 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/17 13:03:07 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 #include <string.h>
 #include <assert.h> //TO REMOVE LATER
 
-#define qprintf printf
+#define qprintf(...) printf(__VA_ARGS__); fflush(stdout)
 
 
 typedef struct	s_vec2i
@@ -70,6 +70,15 @@ void		apply_marks(char *const marks[const 4], char const c)
 	return ;
 }
 
+void		increment_marks(char *marks[const 4])
+{
+	marks[0]++;
+	marks[1]++;
+	marks[2]++;
+	marks[3]++;
+	return ;
+}
+
 bool		check_marks(char *const marks[const 4])
 {
 	return (*marks[0] == '.' && *marks[1] == '.'
@@ -102,9 +111,9 @@ bool		loop_coords(t_map m, t_ppool const *const pool
 	while (c.y <= w - p->h)
 	{
 		c.x = 0;
+		load_marks(m, marks, c, p->dt);
 		while (c.x <= w - p->w)
 		{
-			load_marks(m, marks, c, p->dt);
 			if (check_marks(marks))
 			{
 				apply_marks(marks, p->character);
@@ -112,6 +121,7 @@ bool		loop_coords(t_map m, t_ppool const *const pool
 					return true;
 				unapply_marks(marks);
 			}
+			increment_marks(marks);
 			c.x++;
 		}
 		c.y++;
@@ -186,10 +196,10 @@ int							main(void)
 {
 	t_ppool		pool;
 	int			i;
-	int const	max = 12;
+	int const	max = 13;
 
 	srand(0);
-	srand(clock());
+	/* srand(clock()); */
 
 	bzero(&pool, sizeof(pool)); //debug
 
