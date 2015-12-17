@@ -6,11 +6,12 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/17 13:03:07 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/17 15:11:10 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,9 +28,12 @@ typedef struct	s_vec2i
 
 typedef struct
 {
+	int			sid;	/* Shape ID */
+	uintmax_t	mask;
 	int			w;
 	int			h;
 	t_vec2i		dt[4];
+	t_vec2i		finalpos;
 	char		character;
 }				t_piece;
 
@@ -50,7 +54,9 @@ typedef struct
 
 
 
-
+/*
+** Slave functions for fallback algorithm
+*/
 void		load_marks(t_map m, char *marks[const 4]
 					   , t_vec2i const c, t_vec2i const dt[const 4])
 {
@@ -99,13 +105,19 @@ void		unapply_marks(char *const marks[const 4])
 
 
 
+
+/*
+** Fallback algorithm (char*) when w > sizeof(uintmax_t)
+** Writes result to t_map
+*/
+
 bool		loop_coords(t_map m, t_ppool const *const pool
 						, int const w
 						, int const pid)
 {
+	t_piece const *const	p = pool->pcs + pid;
 	t_vec2i					c;
 	char					*marks[4];
-	t_piece const *const	p = pool->pcs + pid;
 
 	c.y = 0;
 	while (c.y <= w - p->h)
@@ -129,29 +141,121 @@ bool		loop_coords(t_map m, t_ppool const *const pool
 	return false;
 }
 
+/*
+** Main algorithm (bitwise) when w <= sizeof(uintmax_t)
+** Writes result to pool[]->finalpos
+** *
+** Without -O2 'static' does nothing
+** With -O2 'static' speeds things up by 14%
+*/
+
+static bool		loop_coords2(uintmax_t const m, t_ppool *pool
+						, int const w
+						, int const pid)
+{
+	t_piece const *const	p = pool->pcs + pid;
+	t_vec2i					c;
+	uintmax_t				pmask;
+
+	c.y = 0;
+	while (c.y <= w - p->h)
+	{
+		c.x = 0;
+		pmask = p->mask << (8 * c.y);
+		while (c.x <= w - p->w)
+		{
+			if ((pmask & m) == 0)
+			{
+				if (pid == pool->lastpid || loop_coords2(m | pmask, pool, w, pid + 1))
+				{
+					pool->pcs[pid].finalpos = c;
+					return true;
+				}
+			}
+			pmask <<= 1;
+			c.x++;
+		}
+		c.y++;
+	}
+	return false;
+}
+
+
+
+/*
+** Math function
+*/
+int			ft_sqrtceil(int v)
+{
+	int		i;
+
+	i = v;
+	while (i * i > v)
+		i--;
+	return i;
+}
+
+/*
+** Loads loop_coords2's result to t_map
+*/
+void		write_map_solve2(t_map m, t_ppool *const pool)
+{
+	int				i;
+	t_piece const	*p;
+	int const		max = pool->lastpid + 1;
+
+	for (i = 0 ; i < max; i++)
+	{
+		p = pool->pcs + i;
+		m[p->dt[0].y + p->finalpos.y][p->dt[0].x + p->finalpos.x] = p->character;
+		m[p->dt[1].y + p->finalpos.y][p->dt[1].x + p->finalpos.x] = p->character;
+		m[p->dt[2].y + p->finalpos.y][p->dt[2].x + p->finalpos.x] = p->character;
+		m[p->dt[3].y + p->finalpos.y][p->dt[3].x + p->finalpos.x] = p->character;
+	}
+	return ;
+}
+
+/*
+** Tries succesive map size picking the right algorithm
+*/
 void		loop_sizes(t_map m, t_ppool *const pool)
 {
-	int		w;
+	int			w;
 
-	w = 2;
+	w = ft_sqrtceil(pool->lastpid * 4 + 4);
 	while (1)
 	{
-		qprintf("%s with w=%d\n", __FUNCTION__, w);
-		if (loop_coords(m, pool, w, 0))
-			break;
+		if (sizeof(uintmax_t) == 8 && w <= 8)
+		{
+			qprintf("%s with w=%d loop_coords2\n", __FUNCTION__, w);
+			if (loop_coords2(0, pool, w, 0))
+			{
+				write_map_solve2(m, pool);
+				break;
+			}
+		}
+		else
+		{
+			qprintf("%s with w=%d loop_coords\n", __FUNCTION__, w);
+			if (loop_coords(m, pool, w, 0))
+				break;
+		}
 		w++;
 	}
 	return ;
 }
 
-void		solver(t_ppool pool)
+/*
+** Builds t_map and prints result
+*/
+void		solver(t_ppool *pool)
 {
 	char		m[MAP_W][MAP_W];
-	int const	max = 7;
 
 	memset(m, '.', sizeof(m));
 
-	loop_sizes(m, &pool);
+	loop_sizes(m, pool);
+
 
 	int x, y;
 	for (y = 0; y < 15; y++)
@@ -166,26 +270,29 @@ void		solver(t_ppool pool)
 }
 
 
+
+
+
 t_piece const pcs[] = {
-	(t_piece){2, 3, {{1, 0},{0, 1},{1, 1},{0, 2},}, '0'},
-	(t_piece){3, 2, {{1, 0},{0, 1},{1, 1},{2, 1},}, '0'},
-	(t_piece){2, 3, {{1, 0},{1, 1},{0, 2},{1, 2},}, '0'},
-	(t_piece){2, 3, {{1, 0},{0, 1},{1, 1},{1, 2},}, '0'},
-	(t_piece){3, 2, {{1, 0},{2, 0},{0, 1},{1, 1},}, '0'},
-	(t_piece){2, 3, {{0, 0},{0, 1},{1, 1},{0, 2},}, '0'},
-	(t_piece){3, 2, {{0, 0},{1, 0},{2, 0},{1, 1},}, '0'},
-	(t_piece){3, 2, {{0, 0},{0, 1},{1, 1},{2, 1},}, '0'},
-	(t_piece){3, 2, {{0, 0},{1, 0},{1, 1},{2, 1},}, '0'},
-	(t_piece){1, 4, {{0, 0},{0, 1},{0, 2},{0, 3},}, '0'},
-	(t_piece){2, 3, {{0, 0},{1, 0},{0, 1},{0, 2},}, '0'},
-	(t_piece){3, 2, {{0, 0},{1, 0},{2, 0},{2, 1},}, '0'},
-	(t_piece){2, 3, {{0, 0},{0, 1},{0, 2},{1, 2},}, '0'},
-	(t_piece){2, 2, {{0, 0},{1, 0},{0, 1},{1, 1},}, '0'},
-	(t_piece){2, 3, {{0, 0},{1, 0},{1, 1},{1, 2},}, '0'},
-	(t_piece){3, 2, {{0, 0},{1, 0},{2, 0},{0, 1},}, '0'},
-	(t_piece){3, 2, {{2, 0},{0, 1},{1, 1},{2, 1},}, '0'},
-	(t_piece){2, 3, {{0, 0},{0, 1},{1, 1},{1, 2},}, '0'},
-	(t_piece){4, 1, {{0, 0},{1, 0},{2, 0},{3, 0},}, '0'},
+	{0, 0x010302, 2, 3, {{1, 0},{0, 1},{1, 1},{0, 2}}},
+	{1, 0x000702, 3, 2, {{1, 0},{0, 1},{1, 1},{2, 1}}},
+	{2, 0x030202, 2, 3, {{1, 0},{1, 1},{0, 2},{1, 2}}},
+	{3, 0x020302, 2, 3, {{1, 0},{0, 1},{1, 1},{1, 2}}},
+	{4, 0x000306, 3, 2, {{1, 0},{2, 0},{0, 1},{1, 1}}},
+	{5, 0x010301, 2, 3, {{0, 0},{0, 1},{1, 1},{0, 2}}},
+	{6, 0x000207, 3, 2, {{0, 0},{1, 0},{2, 0},{1, 1}}},
+	{7, 0x000701, 3, 2, {{0, 0},{0, 1},{1, 1},{2, 1}}},
+	{8, 0x000603, 3, 2, {{0, 0},{1, 0},{1, 1},{2, 1}}},
+	{9, 0x1010101, 1, 4, {{0, 0},{0, 1},{0, 2},{0, 3}}},
+	{10, 0x010103, 2, 3, {{0, 0},{1, 0},{0, 1},{0, 2}}},
+	{11, 0x000407, 3, 2, {{0, 0},{1, 0},{2, 0},{2, 1}}},
+	{12, 0x030101, 2, 3, {{0, 0},{0, 1},{0, 2},{1, 2}}},
+	{13, 0x000303, 2, 2, {{0, 0},{1, 0},{0, 1},{1, 1}}},
+	{14, 0x020203, 2, 3, {{0, 0},{1, 0},{1, 1},{1, 2}}},
+	{15, 0x000107, 3, 2, {{0, 0},{1, 0},{2, 0},{0, 1}}},
+	{16, 0x000704, 3, 2, {{2, 0},{0, 1},{1, 1},{2, 1}}},
+	{17, 0x020301, 2, 3, {{0, 0},{0, 1},{1, 1},{1, 2}}},
+	{18, 0x00000f, 4, 1, {{0, 0},{1, 0},{2, 0},{3, 0}}},
 };
 
 #include <stdlib.h>
@@ -196,11 +303,9 @@ int							main(void)
 {
 	t_ppool		pool;
 	int			i;
-	int const	max = 13;
+	int const	max = 15;
 
-	srand(0);
-	/* srand(clock()); */
-
+	srand(2);
 	bzero(&pool, sizeof(pool)); //debug
 
 	for (i = 0; i < max; i++)
@@ -211,6 +316,6 @@ int							main(void)
 
 	for (i = 'A'; i <= 'Z'; i++) pool.pcs[i - 'A'].character = i;
 
-	solver(pool);
+	solver(&pool);
 	return (0);
 }
