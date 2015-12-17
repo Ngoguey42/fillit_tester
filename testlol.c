@@ -6,7 +6,7 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/17 15:11:10 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/17 15:21:38 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
@@ -57,7 +57,7 @@ typedef struct
 /*
 ** Slave functions for fallback algorithm
 */
-void		load_marks(t_map m, char *marks[const 4]
+static void		load_marks(t_map m, char *marks[const 4]
 					   , t_vec2i const c, t_vec2i const dt[const 4])
 {
 	marks[0] = &m[c.y + dt[0].y][c.x + dt[0].x];
@@ -67,7 +67,7 @@ void		load_marks(t_map m, char *marks[const 4]
 	return ;
 }
 
-void		apply_marks(char *const marks[const 4], char const c)
+static void		apply_marks(char *const marks[const 4], char const c)
 {
 	*marks[0] = c;
 	*marks[1] = c;
@@ -76,7 +76,7 @@ void		apply_marks(char *const marks[const 4], char const c)
 	return ;
 }
 
-void		increment_marks(char *marks[const 4])
+static void		increment_marks(char *marks[const 4])
 {
 	marks[0]++;
 	marks[1]++;
@@ -85,13 +85,13 @@ void		increment_marks(char *marks[const 4])
 	return ;
 }
 
-bool		check_marks(char *const marks[const 4])
+static bool		check_marks(char *const marks[const 4])
 {
 	return (*marks[0] == '.' && *marks[1] == '.'
 			&& *marks[2] == '.' && *marks[3] == '.');
 }
 
-void		unapply_marks(char *const marks[const 4])
+static void		unapply_marks(char *const marks[const 4])
 {
 	*marks[0] = '.';
 	*marks[1] = '.';
@@ -111,7 +111,7 @@ void		unapply_marks(char *const marks[const 4])
 ** Writes result to t_map
 */
 
-bool		loop_coords(t_map m, t_ppool const *const pool
+static bool		loop_coords(t_map m, t_ppool const *const restrict pool
 						, int const w
 						, int const pid)
 {
@@ -149,7 +149,7 @@ bool		loop_coords(t_map m, t_ppool const *const pool
 ** With -O2 'static' speeds things up by 14%
 */
 
-static bool		loop_coords2(uintmax_t const m, t_ppool *pool
+static bool		loop_coords2(uintmax_t const m, t_ppool *const pool
 						, int const w
 						, int const pid)
 {
@@ -225,7 +225,9 @@ void		loop_sizes(t_map m, t_ppool *const pool)
 	w = ft_sqrtceil(pool->lastpid * 4 + 4);
 	while (1)
 	{
-		if (sizeof(uintmax_t) == 8 && w <= 8)
+		if (sizeof(uintmax_t) == 8 && w <= 8
+			/* && 0 */
+			)
 		{
 			qprintf("%s with w=%d loop_coords2\n", __FUNCTION__, w);
 			if (loop_coords2(0, pool, w, 0))
