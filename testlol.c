@@ -6,7 +6,7 @@
 /*	By: ngoguey <ngoguey@student.42.fr>			+#+	+:+		+#+		*/
 /*												+#+#+#+#+#+	+#+			*/
 /*	Created: 2015/12/10 17:22:22 by ngoguey			#+#	#+#			*/
-/*   Updated: 2015/12/17 15:21:38 by ngoguey          ###   ########.fr       */
+/*   Updated: 2015/12/20 13:00:04 by ngoguey          ###   ########.fr       */
 /*																			*/
 /* ************************************************************************** */
 
@@ -185,13 +185,23 @@ static bool		loop_coords2(uintmax_t const m, t_ppool *const pool
 /*
 ** Math function
 */
-int			ft_sqrtceil(int v)
+int			ft_sqrtfloor(int v)
 {
 	int		i;
 
 	i = v;
 	while (i * i > v)
 		i--;
+	return i;
+}
+
+int			ft_sqrtceil(int v)
+{
+	int		i;
+
+	i = 0;
+	while (i * i < v)
+		i++;
 	return i;
 }
 
@@ -305,9 +315,10 @@ int							main(void)
 {
 	t_ppool		pool;
 	int			i;
-	int const	max = 15;
+	int const	max = 9;
 
-	srand(2);
+	srand(time(0));
+	/* srand(2); */
 	bzero(&pool, sizeof(pool)); //debug
 
 	for (i = 0; i < max; i++)
