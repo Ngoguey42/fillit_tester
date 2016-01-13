@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 17:00:13 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 17:20:19 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -150,7 +150,7 @@ static int work(UnitTest &t)
 		err = ::dup2(w.pipe[1], 1);
 		assert(err == 1); /*dup2 failed*/
 		::execve(av0, (char *[]){av0, av1, NULL}, environ);
-		assert(false); /*execve failed*/
+		assert(false); /*execve failed, av[3] or av[4] must be wrong*/
 	}
 	assert(pid > 0); /*fork failed*/
 	while (1) // Waiting child process with timeout
@@ -342,29 +342,39 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 		assert(f.good()); /* file creation failed */
 		for (auto const &p : pvec)
 		{
+			if (&p != &*pvec.begin()) /* lol line !! */
+				f << '\n';
 			p.dump(f);
-			f << '\n';
+			// if (!last)
 		}
 		assert(f.good()); /* file write failed */
 		f.close();
 		assert(f.good()); /* file close failed */
-		tasks.push_back(std::move(UnitTest("/bin/ls", fname)));
+		tasks.push_back(std::move(UnitTest(av[3], fname)));
+		// tasks.push_back(std::move(UnitTest(av[4], fname)));
 	}
 	return tasks;
 }
 
 int							main(int ac, char *av[])
 {
-	assert(ac == 5);
+	assert(ac == 5); /* wrong number of arguments to program */
+	std::srand(time(0));
 
 	std::vector<UnitTest> tasks = build_tasks(av);
 
 	run(tasks, av);
-	std::cout << tasks[0].output << std::endl;
-	std::cout << tasks[0].err << std::endl;
-	std::cout << tasks[0].timeout << std::endl;
-	std::cout << "waited for "
-			  << std::chrono::duration_cast<std::chrono::microseconds>(tasks[0].time).count()
-			  << " microseconds\n";(void)ac;
+
+	for (auto const &t : tasks)
+	{
+		std::cout << t.argv1 << "err:" << t.err << " timeout:" << t.timeout
+				  << " duration: " << std::chrono::duration_cast<std::chrono::milliseconds>(tasks[0].time).count()
+				  << "ms "
+				  << std::endl;
+		::system((std::string("cat ") + t.argv1).c_str());
+		std::cout << "RESULT:" << std::endl;
+		std::cout << t.output << std::endl;
+		std::cout << "==========================================" << std::endl;
+	}
 	return (0);
 }
