@@ -17,3 +17,14 @@
 ** av[4] binary 2
 */
 ```
+todo:
+- Dynamic time printing
+- a UnitTest.starttime stored right before execve
+- check system ret val
+- output diff at the end of diff log report
+- use clock instead of chrono for some measures
+- screenshot
+- remove some debug
+- clean error message for args errors
+- NUM_WORKERS update witd std::self_thread... and std::max...
+- more info in readme (WORK_TIMEOUT, NUM_WORKERS in tester.hpp) etc...
