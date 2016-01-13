@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 18:13:55 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 18:51:28 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -180,8 +180,9 @@ static int work(UnitTest &t)
 		else
 			assert(false); /*waitpid failed*/
 	}
-	if (*t.status != 0 && *t.status != SIGKILL)
+	if (WIFSIGNALED(*t.status) && !t.timeout)
 	{
+		std::cerr << *t.status << std::endl;
 		t.err = true;
 	}
 	do // Retrieving child process output with nonblocking read
@@ -242,7 +243,7 @@ struct Piece
 				}
 		return h;
 	}
-	unsigned int uid(void) const { /* used to disambiguate the 2^16 different grids */
+	unsigned int uid(void) const { /* used to disambiguate the 2^(4*4) different grids */
 		unsigned int h = 0;
 
 		for (int y = 0; y < 4; y++)
@@ -321,6 +322,11 @@ std::string filename_of_pvec(std::vector<Piece> const &pvec)
 		ret.append(std::to_string(p.uid()));
 		ret.append("_");
 	}
+	if (ret.size() > 200)
+	{
+		ret.erase(200);
+	ret.append("...");
+	}
 	ret.append(".fillit");
 	return ret;
 }
@@ -369,6 +375,7 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 void report(std::vector<UnitTest> const &tasks, char const *const av[])
 {
 	std::chrono::duration<double, std::milli> durs[2] = {0ms, 0ms};
+	int fterrs[2] = {0, 0};
 	int errs[2] = {0, 0};
 	int to[2] = {0, 0};
 	int diffs = 0;
@@ -377,10 +384,14 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 	{
 		durs[0] += tasks[i].time;
 		durs[1] += tasks[i + 1].time;
-		errs[0] += (int)tasks[i].err;
-		errs[1] += (int)tasks[i + 1].err;
+		fterrs[0] += (int)tasks[i].err;
+		fterrs[1] += (int)tasks[i + 1].err;
 		to[0] += (int)tasks[i].timeout;
 		to[1] += (int)tasks[i + 1].timeout;
+		if (tasks[i].output == "error\n")
+			errs[0]++;
+		if (tasks[i + 1].output == "error\n")
+			errs[1]++;
 		if (tasks[i].output != tasks[i + 1].output)
 		{
 			diffs++;
@@ -402,7 +413,8 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 			<< "Player #" << i << "(" << tasks[i].binary_path << ")"
 			<< std::endl;
 		std::cout
-			<< errs[i] << " fatal error(s); "
+			<< fterrs[i] << " crash(s); " << std::endl
+			<< errs[i] << " \"error\\n\" output(s); " << std::endl
 			<< to[i] << " time out(s); "
 			<< std::chrono::duration_cast<std::chrono::milliseconds>(durs[i]).count() << "ms total time"
 				  << std::endl;
@@ -411,19 +423,22 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 	std::cout << diffs << " diffs" << std::endl;
 	std::cout << std::endl;
 	std::cout << "See ./log directory for fatal errors or diffs details" << std::endl;
-	std::cout << "(10 files maximum are created in ./log)" << std::endl;
+	std::cout << "(a maximum of 5 files each are created in ./log)" << std::endl;
 	return ;
 }
 
 
 int							main(int ac, char *av[])
 {
+	std::cout << "Hello World";
+	std::cout.flush();
 	assert(ac == 5); /* wrong number of arguments to program */
 	std::srand(time(0));
 
 	std::vector<UnitTest> tasks = build_tasks(av);
 
 	run(tasks, av);
+	std::cout << "\r";
 	report(tasks, av);
 	return (0); // tmp
 	for (auto const &t : tasks)

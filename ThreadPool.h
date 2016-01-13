@@ -1,10 +1,13 @@
 // curl'ed from https://github.com/progschj/ThreadPool
 // 9a42ec1329f259a5f4881a291db1dcb8f2ad9040
 // Edit1: added ThreadPool::getWorkers()
+// Edit2: added a progress print
 
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
+#include <iostream>
+#include <chrono>
 #include <vector>
 #include <queue>
 #include <memory>
@@ -14,6 +17,8 @@
 #include <future>
 #include <functional>
 #include <stdexcept>
+
+using namespace std::literals;
 
 class ThreadPool {
 public:
@@ -28,10 +33,11 @@ private:
     std::vector< std::thread > workers;
     // the task queue
     std::queue< std::function<void()> > tasks;
-
+	std::chrono::system_clock::time_point last_report;
     // synchronization
     std::mutex queue_mutex;
     std::condition_variable condition;
+
     bool stop;
 };
 
@@ -42,7 +48,7 @@ inline std::vector< std::thread > const &ThreadPool::getWorkers() const
 
 // the constructor just launches some amount of workers
 inline ThreadPool::ThreadPool(size_t threads)
-    :   stop(false)
+    :   stop(false), last_report(std::chrono::system_clock::now())
 {
     for(size_t i = 0;i<threads;++i)
         workers.emplace_back(
@@ -51,6 +57,7 @@ inline ThreadPool::ThreadPool(size_t threads)
                 for(;;)
                 {
                     std::function<void()> task;
+					int nleft;
 
                     {
                         std::unique_lock<std::mutex> lock(this->queue_mutex);
@@ -60,8 +67,15 @@ inline ThreadPool::ThreadPool(size_t threads)
                             return;
                         task = std::move(this->tasks.front());
                         this->tasks.pop();
+						nleft = this->tasks.size();
+						if (std::chrono::system_clock::now() - this->last_report > 250ms)
+						{
+							std::cout << "                    \r";
+							std::cout  << nleft << " tasks left";
+							std::cout.flush();
+							this->last_report = std::chrono::system_clock::now();
+						}
                     }
-
                     task();
                 }
             }
