@@ -6,16 +6,28 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 15:19:03 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 16:29:28 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
+
+/*
+** clang++ -std=c++14 main.cpp && time ./a.out 1 100 /bin/ls ls
+** *
+** av[1] pieces per test (0+)
+** av[2] num tests (0+)
+** av[3] binary 1
+** av[4] binary 2
+*/
 
 #include <vector>
 #include <utility>
 #include <unordered_map>
 #include <iostream>
 #include <chrono>
-
+#include <unordered_set>
+#include <sstream>
+#include <fstream>
+#include <algorithm>
 // #include <>
 
 #include <unistd.h>
@@ -23,10 +35,11 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "ThreadPool.h"
 #define NUM_WORKERS 5
-#define WORK_TIMEOUT 10s
+#define WORK_TIMEOUT 1s
 using namespace std::literals;
 extern char **environ;
 
@@ -37,16 +50,20 @@ public:
 	/* CONSTRUCTION ***************** */
 	UnitTest()
 		: binary_path("/bin/ls")
-		, argv1("-l")
-		{
+		, argv1("/dev")
+		, timeout{}, status{}, err{}, time{}, output{}
+		{}
 
 
-		}
+	UnitTest(UnitTest &&src)
+		: binary_path(src.binary_path)
+		, argv1(std::move(src.argv1))
+		, timeout{}, status{}, err{}, time{}, output{}
+		{}
 	~UnitTest(){}
 
 	// UnitTest() = delete;
 	UnitTest(UnitTest const &src) = delete;
-	UnitTest(UnitTest &&src) = delete;
 	UnitTest					&operator=(UnitTest const &rhs) = delete;
 	UnitTest					&operator=(UnitTest &&rhs) = delete;
 
@@ -61,7 +78,6 @@ public:
 
 protected:
 private:
-
 };
 
 class WorkerData
@@ -89,7 +105,11 @@ public:
 		int err;
 		int flags;
 
-		WorkerData::map.emplace(id, w);
+		{
+			std::unique_lock<std::mutex> lock(WorkerData::map_mutex);
+
+			WorkerData::map.emplace(id, w);
+		}
 		err = ::pipe(w->pipe);
 		assert(err == 0); /*pipe failed*/
 		flags = ::fcntl(w->pipe[0], F_GETFL, 0);
@@ -123,7 +143,7 @@ static int work(UnitTest &t)
 	::strcpy(av1, t.argv1.c_str());
 	start = std::chrono::high_resolution_clock::now();
 	pid = ::fork();
-	if (pid == 0)
+	if (pid == 0) // Child process
 	{
 		err = ::close(w.pipe[0]);
 		assert(err == 0); /*close failed*/
@@ -133,7 +153,7 @@ static int work(UnitTest &t)
 		assert(false); /*execve failed*/
 	}
 	assert(pid > 0); /*fork failed*/
-	while (1)
+	while (1) // Waiting child process with timeout
 	{
 		std::this_thread::yield();
 		err = ::waitpid(pid, t.status, WNOHANG);
@@ -142,9 +162,8 @@ static int work(UnitTest &t)
 			t.time = std::chrono::high_resolution_clock::now() - start;
 			if (t.time > WORK_TIMEOUT)
 			{
-				t.err = true;
+				::kill(pid, SIGKILL);
 				t.timeout = true;
-				break ;
 			}
 			continue ;
 		}
@@ -155,7 +174,7 @@ static int work(UnitTest &t)
 	}
 	if (*t.status != 0)
 		t.err = true;
-	do
+	do // Retrieving child process output with nonblocking read
 	{
 		ret = ::read(w.pipe[0], buf, sizeof(buf));
 		err = errno;
@@ -176,13 +195,137 @@ void		run(std::vector<UnitTest> &tasks, char const *const av[])
 	return ;
 }
 
+
+struct Piece
+{
+	char    val[4][5];
+	unsigned int adjDiff(void) { /* used to detect validity of a grid */
+		unsigned int    acc = 0;
+
+		for (int y = 0; y < 4; y++)
+			for (int x = 0; x < 3; x++)
+				if (val[y][x] == '#' && val[y][x + 1] == '#')
+					acc++;
+		for (int y = 0; y < 3; y++)
+			for (int x = 0; x < 4; x++)
+				if (val[y][x] == '#' && val[y + 1][x] == '#')
+					acc++;
+		return acc;
+	}
+	unsigned int type(void) { /* used to disambiguate the 19 types */
+		int             pos = 0;
+		unsigned int    h = 0;
+		int             fx = -1;
+		int             fy = -1;
+
+		for (int y = 0; y < 4; y++)
+			for (int x = 0; x < 4; x++)
+				if (val[y][x] == '#')
+				{
+					if (fx < 0)
+						fx = x, fy = y;
+					else
+					{
+						h += (x - fx + 2) << 4 * pos++;
+						h += (y - fy + 2) << 4 * pos++;
+					}
+				}
+		return h;
+	}
+	unsigned int uid(void) { /* used to disambiguate the 2^16 grids */
+		unsigned int h = 0;
+
+		for (int y = 0; y < 4; y++)
+			for (int x = 0; x < 4; x++)
+				h = (h << 1) + (this->val[y][x] == '#' ? 1 : 0);
+		return h;
+	}
+	void dump(void) {
+		std::for_each(std::begin(val), std::end(val)
+					  , [](char l[5]){std::cout << l << '\n';});
+	}
+	void dump(std::ofstream &os) {
+		for (auto const &l : val)
+			os << l << '\n';
+	}
+};
+
+typedef std::unordered_multimap<unsigned int, Piece> pmap_t;
+typedef std::unordered_set<unsigned int> pset_t;
+
+void        gen(Piece &p, pmap_t &pmap, pset_t &pset, int count, int istart)
+{
+	int     y;
+	int     x;
+
+	if (count < 4)
+	{
+		for (int i = istart; i < 16; i++)
+		{
+			y = i / 4;
+			x = i % 4;
+			p.val[y][x] = '#';
+			gen(p, pmap, pset, count + 1, i + 1);
+			p.val[y][x] = '.';
+		}
+	}
+	else if (p.adjDiff() >= 3)
+	{
+		pmap.insert({p.type(), p});
+		pset.insert(p.type());
+	}
+}
+
+
+unsigned int    randType(pset_t &pset)
+{
+	int const   n = std::rand() % pset.size();
+	int         i = 0;
+
+	for (auto t : pset)
+		if (i++ == n)
+			return t;
+	assert(false); /* should not be reached */
+}
+
+Piece         &randPiece(pmap_t &pmap, pset_t &pset)
+{
+	unsigned int const  t = randType(pset);
+	unsigned int const  n = std::rand() % pmap.count(t);
+	auto const          range = pmap.equal_range(t);
+	unsigned int        i = 0;
+
+	for (auto it = range.first; it != range.second; ++it)
+		if (i++ == n)
+			return it->second;
+	assert(false); /* should not be reached */
+}
+
+std::vector<UnitTest> build_tasks(char const *const av[])
+{
+	std::vector<UnitTest> tasks(100);
+	std::unordered_multimap<unsigned int, Piece> pmap;
+	std::unordered_set<unsigned int> pset;
+	std::vector<Piece> pvec;
+	Piece p = {"....", "....", "....", "...."};
+	int const pptest = std::atoi(av[1]);
+
+	assert(pptest >= 0);
+	gen(p, pmap, pset, 0, 0);
+	::system("rm -rf log; mkdir -p log map");
+	// while (count-- > 0)
+	// 	pvec.push_back(randPiece(pmap, pset));
+	return tasks;
+}
+
 int							main(int ac, char *av[])
 {
-	std::vector<UnitTest> tasks(1000);
+	assert(ac == 5);
 
-	assert(ac == 3);
+	std::vector<UnitTest> tasks = build_tasks(av);
+
 	run(tasks, av);
-	std::cout << tasks[0].output << std::endl;
+	// std::cout << tasks[0].output << std::endl;
 	std::cout << tasks[0].err << std::endl;
 	std::cout << tasks[0].timeout << std::endl;
 	std::cout << "waited for "
