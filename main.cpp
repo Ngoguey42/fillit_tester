@@ -6,18 +6,18 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 18:51:28 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 19:17:29 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 /*
-** clang++ -O2 -std=c++14 main.cpp && time ./a.out 3 1000 ./
+** clang++ -O2 -std=c++14 main.cpp && time ./a.out 3 1000 ./fillita ./fillitb
 ** *
 **   The preceding command:
 ** 1. compiles the tester
-** 2. removes ./map and ./log
+** 2. removes ./map and ./log directories
 ** 3. generates 1000 random .fillit files containing 3 pieces in ./map
-** 4. run in parallel the two given binaries over those maps
+** 4. runs in parallel the two given binaries over those maps
 ** 5. computes a report, and logs errors in ./log
 ** *
 ** *
@@ -325,7 +325,7 @@ std::string filename_of_pvec(std::vector<Piece> const &pvec)
 	if (ret.size() > 200)
 	{
 		ret.erase(200);
-	ret.append("...");
+		ret.append("...");
 	}
 	ret.append(".fillit");
 	return ret;
@@ -361,7 +361,6 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 			if (&p != &*pvec.begin()) /* lol line !! */
 				f << '\n';
 			p.dump(f);
-			// if (!last)
 		}
 		assert(f.good()); /* file write failed */
 		f.close();
@@ -370,6 +369,51 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 		tasks.push_back(std::move(UnitTest(av[4], fname)));
 	}
 	return tasks;
+}
+
+std::string escape(std::string s)
+{
+	std::string::iterator it;
+
+	while (1)
+	{
+		auto it = s.find('/');
+
+		if (it == std::string::npos)
+			break ;
+		s[it] = '_';
+	}
+	while (1)
+	{
+		auto it = s.find(' ');
+
+		if (it == std::string::npos)
+			break ;
+		s[it] = '_';
+	}
+
+	return s;
+}
+
+void report_crash(UnitTest const &t)
+{
+	std::ofstream f;
+	char const *crashname = strsignal(WTERMSIG(*t.status));
+	std::string const fname = std::string("./log/CRASH_")
+		+ escape(crashname) + "_"
+		+ escape(t.binary_path) + ".txt";
+
+	f.open(fname, std::ios_base::out | std::ios_base::trunc);
+	f << t.binary_path;
+	f << '\n';
+	f << crashname;
+	f << '\n';
+	f << "over: \"" << t.argv1 << "\"";
+	f << '\n';
+	f << "ran for: " << std::chrono::duration_cast<std::chrono::milliseconds>(t.time).count() << "ms";
+	f << '\n';
+	f.close();
+	return ;
 }
 
 void report(std::vector<UnitTest> const &tasks, char const *const av[])
@@ -392,6 +436,11 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 			errs[0]++;
 		if (tasks[i + 1].output == "error\n")
 			errs[1]++;
+		if (tasks[i].err && errs[0] < 5)
+			report_crash(tasks[i]);
+		if (tasks[i + 1].err && errs[1] < 5)
+			report_crash(tasks[i + 1]);
+			return ;
 		if (tasks[i].output != tasks[i + 1].output)
 		{
 			diffs++;
@@ -406,7 +455,7 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 		<< "ms ; "
 		<< NUM_WORKERS << " programs running in parallel"
 		<< std::endl;
-		std::cout << std::endl;
+	std::cout << std::endl;
 	for (int i = 0; i < 2; i++)
 	{
 		std::cout
@@ -417,7 +466,7 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 			<< errs[i] << " \"error\\n\" output(s); " << std::endl
 			<< to[i] << " time out(s); "
 			<< std::chrono::duration_cast<std::chrono::milliseconds>(durs[i]).count() << "ms total time"
-				  << std::endl;
+			<< std::endl;
 	}
 	std::cout << std::endl;
 	std::cout << diffs << " diffs" << std::endl;
