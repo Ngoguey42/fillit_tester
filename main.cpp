@@ -6,23 +6,27 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 14:44:41 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 15:19:03 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
-
 #include <vector>
-#include <string.h>
-// #include <>
 #include <utility>
-#include <assert.h>
 #include <unordered_map>
 #include <iostream>
-#include "ThreadPool.h"
+#include <chrono>
+
+// #include <>
 
 #include <unistd.h>
+#include <string.h>
+#include <assert.h>
+#include <fcntl.h>
+#include <errno.h>
 
+#include "ThreadPool.h"
 #define NUM_WORKERS 5
+#define WORK_TIMEOUT 10s
 using namespace std::literals;
 extern char **environ;
 
@@ -52,6 +56,7 @@ public:
 	bool timeout;
 	int status[1];
 	bool err;
+	std::chrono::duration<double, std::milli> time;
 	std::string output;
 
 protected:
@@ -82,10 +87,15 @@ public:
 	static void initWorkerData(std::thread::id id) {
 		WorkerData *const w = new WorkerData;
 		int err;
+		int flags;
 
 		WorkerData::map.emplace(id, w);
 		err = ::pipe(w->pipe);
 		assert(err == 0); /*pipe failed*/
+		flags = ::fcntl(w->pipe[0], F_GETFL, 0);
+		err = ::fcntl(w->pipe[0], F_SETFL, flags | O_NONBLOCK);;
+		assert(err == 0); /*fcntl failed*/
+		return ;
 	}
 
 protected:
@@ -103,11 +113,15 @@ static int work(UnitTest &t)
 	WorkerData &w = WorkerData::getWorkerData(std::this_thread::get_id());
 	pid_t pid;
 	int err;
+	int ret;
 	char av0[::strlen(t.binary_path) + 1];
 	char av1[t.argv1.size() + 1];
+	auto start = std::chrono::high_resolution_clock::now();
+	char buf[128];
 
 	::strcpy(av0, t.binary_path);
 	::strcpy(av1, t.argv1.c_str());
+	start = std::chrono::high_resolution_clock::now();
 	pid = ::fork();
 	if (pid == 0)
 	{
@@ -119,34 +133,60 @@ static int work(UnitTest &t)
 		assert(false); /*execve failed*/
 	}
 	assert(pid > 0); /*fork failed*/
-	err = ::waitpid(pid, t.status, 0);
-	assert(err == pid); /*waitpid failed*/
+	while (1)
+	{
+		std::this_thread::yield();
+		err = ::waitpid(pid, t.status, WNOHANG);
+		if (err == 0)
+		{
+			t.time = std::chrono::high_resolution_clock::now() - start;
+			if (t.time > WORK_TIMEOUT)
+			{
+				t.err = true;
+				t.timeout = true;
+				break ;
+			}
+			continue ;
+		}
+		else if (err == pid)
+			break ;
+		else
+			assert(false); /*waitpid failed*/
+	}
 	if (*t.status != 0)
 		t.err = true;
+	do
+	{
+		ret = ::read(w.pipe[0], buf, sizeof(buf));
+		err = errno;
+		t.output.append(buf, ret);
+	} while (ret > 0);
+	assert(ret == -1 && err == EAGAIN); /*read failed*/
 	return 0;
 }
 
-void		run(char const *const av[])
+void		run(std::vector<UnitTest> &tasks, char const *const av[])
 {
 	ThreadPool p(NUM_WORKERS);
-	std::vector<UnitTest> tasks(150);
 
 	for (auto const &w : p.getWorkers())
 		WorkerData::initWorkerData(w.get_id());
 	for (UnitTest &t : tasks)
-	{
 		p.enqueue(&work, std::ref(t));
-
-
-	}
 	return ;
 }
 
-
 int							main(int ac, char *av[])
 {
+	std::vector<UnitTest> tasks(1000);
+
 	assert(ac == 3);
-	run(av);
-	(void)ac;
+	run(tasks, av);
+	std::cout << tasks[0].output << std::endl;
+	std::cout << tasks[0].err << std::endl;
+	std::cout << tasks[0].timeout << std::endl;
+	std::cout << "waited for "
+			  << std::chrono::duration_cast<std::chrono::microseconds>(tasks[0].time).count()
+			  << " microseconds\n";(void)ac;
 	return (0);
 }
