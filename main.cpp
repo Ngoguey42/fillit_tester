@@ -6,12 +6,12 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 16:29:28 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 17:00:13 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 /*
-** clang++ -std=c++14 main.cpp && time ./a.out 1 100 /bin/ls ls
+** clang++ -O2 -std=c++14 main.cpp && time ./a.out 1 100 /bin/ls ls
 ** *
 ** av[1] pieces per test (0+)
 ** av[2] num tests (0+)
@@ -48,9 +48,9 @@ class UnitTest
 public:
 
 	/* CONSTRUCTION ***************** */
-	UnitTest()
-		: binary_path("/bin/ls")
-		, argv1("/dev")
+	UnitTest(char const *bp, std::string const &av1)
+		: binary_path(bp)
+		, argv1(av1)
 		, timeout{}, status{}, err{}, time{}, output{}
 		{}
 
@@ -62,7 +62,7 @@ public:
 		{}
 	~UnitTest(){}
 
-	// UnitTest() = delete;
+	UnitTest() = delete;
 	UnitTest(UnitTest const &src) = delete;
 	UnitTest					&operator=(UnitTest const &rhs) = delete;
 	UnitTest					&operator=(UnitTest &&rhs) = delete;
@@ -199,7 +199,7 @@ void		run(std::vector<UnitTest> &tasks, char const *const av[])
 struct Piece
 {
 	char    val[4][5];
-	unsigned int adjDiff(void) { /* used to detect validity of a grid */
+	unsigned int adjDiff(void) { /* used to disambiguate valid and invalid pieces */
 		unsigned int    acc = 0;
 
 		for (int y = 0; y < 4; y++)
@@ -212,7 +212,7 @@ struct Piece
 					acc++;
 		return acc;
 	}
-	unsigned int type(void) { /* used to disambiguate the 19 types */
+	unsigned int type(void) { /* used to disambiguate the 19 different shapes */
 		int             pos = 0;
 		unsigned int    h = 0;
 		int             fx = -1;
@@ -232,7 +232,7 @@ struct Piece
 				}
 		return h;
 	}
-	unsigned int uid(void) { /* used to disambiguate the 2^16 grids */
+	unsigned int uid(void) const { /* used to disambiguate the 2^16 different grids */
 		unsigned int h = 0;
 
 		for (int y = 0; y < 4; y++)
@@ -244,7 +244,7 @@ struct Piece
 		std::for_each(std::begin(val), std::end(val)
 					  , [](char l[5]){std::cout << l << '\n';});
 	}
-	void dump(std::ofstream &os) {
+	void dump(std::ofstream &os) const {
 		for (auto const &l : val)
 			os << l << '\n';
 	}
@@ -301,20 +301,55 @@ Piece         &randPiece(pmap_t &pmap, pset_t &pset)
 	assert(false); /* should not be reached */
 }
 
+
+std::string filename_of_pvec(std::vector<Piece> const &pvec)
+{
+	std::string ret("./map/");
+
+	for (auto const &p : pvec)
+	{
+		ret.append(std::to_string(p.uid()));
+		ret.append("_");
+	}
+	ret.append(".fillit");
+	return ret;
+}
+
+
 std::vector<UnitTest> build_tasks(char const *const av[])
 {
-	std::vector<UnitTest> tasks(100);
+	std::vector<UnitTest> tasks;
 	std::unordered_multimap<unsigned int, Piece> pmap;
 	std::unordered_set<unsigned int> pset;
 	std::vector<Piece> pvec;
 	Piece p = {"....", "....", "....", "...."};
 	int const pptest = std::atoi(av[1]);
+	int const ntests = std::atoi(av[2]);
+	std::string fname;
+	std::ofstream f;
 
-	assert(pptest >= 0);
+	assert(pptest >= 0); /* wrong av[1] */
+	assert(ntests >= 0); /* wrong av[2] */
 	gen(p, pmap, pset, 0, 0);
-	::system("rm -rf log; mkdir -p log map");
-	// while (count-- > 0)
-	// 	pvec.push_back(randPiece(pmap, pset));
+	::system("rm -rf map log; mkdir -p log map");
+	for (int i = 0; i < ntests; i++)
+	{
+		pvec.clear();
+		for (int j = 0; j < pptest; j++)
+			pvec.push_back(randPiece(pmap, pset));
+		fname = filename_of_pvec(pvec);
+		f.open(fname, std::ios_base::out | std::ios_base::trunc);
+		assert(f.good()); /* file creation failed */
+		for (auto const &p : pvec)
+		{
+			p.dump(f);
+			f << '\n';
+		}
+		assert(f.good()); /* file write failed */
+		f.close();
+		assert(f.good()); /* file close failed */
+		tasks.push_back(std::move(UnitTest("/bin/ls", fname)));
+	}
 	return tasks;
 }
 
@@ -325,7 +360,7 @@ int							main(int ac, char *av[])
 	std::vector<UnitTest> tasks = build_tasks(av);
 
 	run(tasks, av);
-	// std::cout << tasks[0].output << std::endl;
+	std::cout << tasks[0].output << std::endl;
 	std::cout << tasks[0].err << std::endl;
 	std::cout << tasks[0].timeout << std::endl;
 	std::cout << "waited for "
