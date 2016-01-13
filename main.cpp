@@ -6,15 +6,23 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 17:20:19 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 18:13:55 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 /*
-** clang++ -O2 -std=c++14 main.cpp && time ./a.out 1 100 /bin/ls ls
+** clang++ -O2 -std=c++14 main.cpp && time ./a.out 3 1000 ./
+** *
+**   The preceding command:
+** 1. compiles the tester
+** 2. removes ./map and ./log
+** 3. generates 1000 random .fillit files containing 3 pieces in ./map
+** 4. run in parallel the two given binaries over those maps
+** 5. computes a report, and logs errors in ./log
+** *
 ** *
 ** av[1] pieces per test (0+)
-** av[2] num tests (0+)
+** av[2] num tests (1+)
 ** av[3] binary 1
 ** av[4] binary 2
 */
@@ -38,8 +46,8 @@
 #include <signal.h>
 
 #include "ThreadPool.h"
-#define NUM_WORKERS 5
-#define WORK_TIMEOUT 1s
+#define NUM_WORKERS 4
+#define WORK_TIMEOUT 100ms
 using namespace std::literals;
 extern char **environ;
 
@@ -172,8 +180,10 @@ static int work(UnitTest &t)
 		else
 			assert(false); /*waitpid failed*/
 	}
-	if (*t.status != 0)
+	if (*t.status != 0 && *t.status != SIGKILL)
+	{
 		t.err = true;
+	}
 	do // Retrieving child process output with nonblocking read
 	{
 		ret = ::read(w.pipe[0], buf, sizeof(buf));
@@ -329,7 +339,7 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 	std::ofstream f;
 
 	assert(pptest >= 0); /* wrong av[1] */
-	assert(ntests >= 0); /* wrong av[2] */
+	assert(ntests > 0); /* wrong av[2] */
 	gen(p, pmap, pset, 0, 0);
 	::system("rm -rf map log; mkdir -p log map");
 	for (int i = 0; i < ntests; i++)
@@ -351,10 +361,60 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 		f.close();
 		assert(f.good()); /* file close failed */
 		tasks.push_back(std::move(UnitTest(av[3], fname)));
-		// tasks.push_back(std::move(UnitTest(av[4], fname)));
+		tasks.push_back(std::move(UnitTest(av[4], fname)));
 	}
 	return tasks;
 }
+
+void report(std::vector<UnitTest> const &tasks, char const *const av[])
+{
+	std::chrono::duration<double, std::milli> durs[2] = {0ms, 0ms};
+	int errs[2] = {0, 0};
+	int to[2] = {0, 0};
+	int diffs = 0;
+
+	for(int i = 0; i < tasks.size(); i += 2)
+	{
+		durs[0] += tasks[i].time;
+		durs[1] += tasks[i + 1].time;
+		errs[0] += (int)tasks[i].err;
+		errs[1] += (int)tasks[i + 1].err;
+		to[0] += (int)tasks[i].timeout;
+		to[1] += (int)tasks[i + 1].timeout;
+		if (tasks[i].output != tasks[i + 1].output)
+		{
+			diffs++;
+		}
+	}
+	std::cout
+		<< std::atoi(av[2]) << " map(s) of size "
+		<< std::atoi(av[1]) << " generated in ./map"
+		<< std::endl;
+	std::cout
+		<< "WORK_TIMEOUT set to " << std::chrono::duration_cast<std::chrono::milliseconds>(WORK_TIMEOUT).count()
+		<< "ms ; "
+		<< NUM_WORKERS << " programs running in parallel"
+		<< std::endl;
+		std::cout << std::endl;
+	for (int i = 0; i < 2; i++)
+	{
+		std::cout
+			<< "Player #" << i << "(" << tasks[i].binary_path << ")"
+			<< std::endl;
+		std::cout
+			<< errs[i] << " fatal error(s); "
+			<< to[i] << " time out(s); "
+			<< std::chrono::duration_cast<std::chrono::milliseconds>(durs[i]).count() << "ms total time"
+				  << std::endl;
+	}
+	std::cout << std::endl;
+	std::cout << diffs << " diffs" << std::endl;
+	std::cout << std::endl;
+	std::cout << "See ./log directory for fatal errors or diffs details" << std::endl;
+	std::cout << "(10 files maximum are created in ./log)" << std::endl;
+	return ;
+}
+
 
 int							main(int ac, char *av[])
 {
@@ -364,14 +424,17 @@ int							main(int ac, char *av[])
 	std::vector<UnitTest> tasks = build_tasks(av);
 
 	run(tasks, av);
-
+	report(tasks, av);
+	return (0); // tmp
 	for (auto const &t : tasks)
 	{
-		std::cout << t.argv1 << "err:" << t.err << " timeout:" << t.timeout
-				  << " duration: " << std::chrono::duration_cast<std::chrono::milliseconds>(tasks[0].time).count()
+		std::cout << t.binary_path << " " << t.argv1
+				  << " err:" << t.err
+				  << " timeout:" << t.timeout
+				  << " duration:" << std::chrono::duration_cast<std::chrono::milliseconds>(t.time).count()
 				  << "ms "
 				  << std::endl;
-		::system((std::string("cat ") + t.argv1).c_str());
+		// ::system((std::string("cat ") + t.argv1).c_str());
 		std::cout << "RESULT:" << std::endl;
 		std::cout << t.output << std::endl;
 		std::cout << "==========================================" << std::endl;
