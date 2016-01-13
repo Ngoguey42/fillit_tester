@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 19:23:49 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 19:27:35 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -413,6 +413,7 @@ void report_crash(UnitTest const &t)
 	f << "ran for: " << std::chrono::duration_cast<std::chrono::milliseconds>(t.time).count() << "ms";
 	f << '\n';
 	f.close();
+	// TODO: output diff at the end of the file
 	return ;
 }
 
