@@ -1,3 +1,7 @@
+// curl'ed from https://github.com/progschj/ThreadPool
+// 9a42ec1329f259a5f4881a291db1dcb8f2ad9040
+// Edit1: added ThreadPool::getWorkers()
+
 #ifndef THREAD_POOL_H
 #define THREAD_POOL_H
 
@@ -15,21 +19,27 @@ class ThreadPool {
 public:
     ThreadPool(size_t);
     template<class F, class... Args>
-    auto enqueue(F&& f, Args&&... args) 
+    auto enqueue(F&& f, Args&&... args)
         -> std::future<typename std::result_of<F(Args...)>::type>;
+	std::vector< std::thread > const &getWorkers() const;
     ~ThreadPool();
 private:
     // need to keep track of threads so we can join them
     std::vector< std::thread > workers;
     // the task queue
     std::queue< std::function<void()> > tasks;
-    
+
     // synchronization
     std::mutex queue_mutex;
     std::condition_variable condition;
     bool stop;
 };
- 
+
+inline std::vector< std::thread > const &ThreadPool::getWorkers() const
+{
+	return this->workers;
+}
+
 // the constructor just launches some amount of workers
 inline ThreadPool::ThreadPool(size_t threads)
     :   stop(false)
@@ -60,7 +70,7 @@ inline ThreadPool::ThreadPool(size_t threads)
 
 // add new work item to the pool
 template<class F, class... Args>
-auto ThreadPool::enqueue(F&& f, Args&&... args) 
+auto ThreadPool::enqueue(F&& f, Args&&... args)
     -> std::future<typename std::result_of<F(Args...)>::type>
 {
     using return_type = typename std::result_of<F(Args...)>::type;
@@ -68,7 +78,7 @@ auto ThreadPool::enqueue(F&& f, Args&&... args)
     auto task = std::make_shared< std::packaged_task<return_type()> >(
             std::bind(std::forward<F>(f), std::forward<Args>(args)...)
         );
-        
+
     std::future<return_type> res = task->get_future();
     {
         std::unique_lock<std::mutex> lock(queue_mutex);
