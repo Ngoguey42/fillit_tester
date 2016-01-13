@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/13 11:32:11 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/13 19:17:29 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/13 19:23:49 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -416,6 +416,36 @@ void report_crash(UnitTest const &t)
 	return ;
 }
 
+void report_diff(UnitTest const &ta, UnitTest const &tb)
+{
+	std::ofstream f;
+	// char const *crashname = strsignal(WTERMSIG(*t.status));
+	std::string const fname = std::string("./log/DIFF_")
+		+ escape(ta.argv1) + ".txt";
+
+	f.open(fname, std::ios_base::out | std::ios_base::trunc);
+	// f << t.binary_path;
+	// f << '\n';
+	// f << crashname;
+	// f << '\n';
+	f << "over: \"" << ta.argv1 << "\"";
+	f << '\n';
+	f << "===================================================\n";
+	f << ta.binary_path << " output:\n";
+	f << "ran for: " << std::chrono::duration_cast<std::chrono::milliseconds>(ta.time).count() << "ms\n";
+	f << "===================================================\n";
+	f << ta.output;
+	f << "===================================================\n";
+	f << tb.binary_path << " output:\n";
+	f << "ran for: " << std::chrono::duration_cast<std::chrono::milliseconds>(tb.time).count() << "ms\n";
+	f << "===================================================\n";
+	f << tb.output;
+	f << "===================================================\n";
+	// f << '\n';
+	f.close();
+	return ;
+}
+
 void report(std::vector<UnitTest> const &tasks, char const *const av[])
 {
 	std::chrono::duration<double, std::milli> durs[2] = {0ms, 0ms};
@@ -436,14 +466,17 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 			errs[0]++;
 		if (tasks[i + 1].output == "error\n")
 			errs[1]++;
-		if (tasks[i].err && errs[0] < 5)
+		if (tasks[i].err && errs[0] <= 5)
 			report_crash(tasks[i]);
-		if (tasks[i + 1].err && errs[1] < 5)
+		if (tasks[i + 1].err && errs[1] <= 5)
 			report_crash(tasks[i + 1]);
-			return ;
 		if (tasks[i].output != tasks[i + 1].output)
 		{
 			diffs++;
+			if (diffs <= 5 && tasks[i].err == false && tasks[i + 1].err == false)
+			{
+				report_diff(tasks[i], tasks[i + 1]);
+			}
 		}
 	}
 	std::cout
