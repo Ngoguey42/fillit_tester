@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:38:58 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/14 12:30:09 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/14 12:57:13 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -115,7 +115,12 @@ static void report_diff(UnitTest const &ta, UnitTest const &tb)
 
 void report(std::vector<UnitTest> const &tasks, char const *const av[])
 {
-	duration<double, std::milli> durs[2] = {0ms, 0ms};
+	using ms_t = duration<double, std::milli>;
+
+	ms_t durs[2] = {0ms, 0ms};
+	std::pair<ms_t, ms_t>	minmax[2] =
+		{{tasks[0].duration, tasks[0].duration}
+		 , {tasks[1].duration, tasks[1].duration}};
 	int fterrs[2] = {0, 0};
 	int errs[2] = {0, 0};
 	int to[2] = {0, 0};
@@ -125,6 +130,10 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 	{
 		durs[0] += tasks[i].duration;
 		durs[1] += tasks[i + 1].duration;
+		minmax[0] = std::minmax<ms_t>(
+			{minmax[0].first, minmax[0].second, tasks[i].duration});
+		minmax[1] = std::minmax<ms_t>(
+			{minmax[1].first, minmax[1].second, tasks[i + 1].duration});
 		fterrs[0] += (int)tasks[i].err;
 		fterrs[1] += (int)tasks[i + 1].err;
 		to[0] += (int)tasks[i].timeout;
@@ -154,13 +163,16 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 	for (int i = 0; i < 2; i++)
 	{
 		std::cout
-			<< "Player #" << i << "(" << tasks[i].binary_path << ")"
+			<< "Player #" << i << "(" << tasks[i].binary_path << "); "
+			<< durToStr(durs[i]) << "(total) "
+			<< durToStr(durs[i] / (tasks.size() / 2)) << "(avg) "
+			<< durToStr(minmax[i].first) << "(min) "
+			<< durToStr(minmax[i].second) << "(max)"
 			<< std::endl;
 		std::cout
-			<< fterrs[i] << " crash(s); " << std::endl
-			<< errs[i] << " \"error\\n\" output(s); " << std::endl
-			<< to[i] << " time out(s); "
-			<< durToStr(durs[i]) << " total time" << std::endl;
+			<< fterrs[i] << " crash(s)" << std::endl
+			<< errs[i] << " \"error\\n\" output(s)" << std::endl
+			<< to[i] << " time out(s)" << std::endl;
 	}
 	std::cout << std::endl;
 	std::cout << diffs << " diffs" << std::endl;

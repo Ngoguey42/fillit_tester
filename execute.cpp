@@ -6,25 +6,25 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:51:03 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/14 12:10:14 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/14 13:07:51 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 #include "tester.hpp"
 extern char **environ;
 
-static void wait_child(UnitTest &t, pid_t pid)
+static void wait_child(UnitTest &t, pid_t pid
+					   , std::chrono::high_resolution_clock::time_point start)
 {
 	int err;
-	auto start = std::chrono::high_resolution_clock::now();
 
 	while (1) // Waiting child process with timeout
 	{
 		std::this_thread::yield();
 		err = ::waitpid(pid, t.status, WNOHANG);
+		t.duration = std::chrono::high_resolution_clock::now() - start;
 		if (err == 0)
 		{
-			t.duration = std::chrono::high_resolution_clock::now() - start;
 			if (t.duration > WORK_TIMEOUT)
 			{
 				(void)::kill(pid, SIGKILL); /*not checking ret*/
@@ -65,12 +65,13 @@ static int work(UnitTest &t)
 	int err;
 	int ret;
 	char buf[128];
+	auto start = std::chrono::high_resolution_clock::now();
 
 	pid = ::fork();
 	if (pid == 0) // Child process
 		child_routine(t, w);
 	assert(pid > 0); /*fork failed*/
-	wait_child(t, pid);
+	wait_child(t, pid, start);
 	if (WIFSIGNALED(*t.status) && !t.timeout)
 		t.err = true;
 	do // Retrieving child process output with nonblocking read

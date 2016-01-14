@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:51:01 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/14 12:13:04 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/14 13:05:02 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -36,7 +36,7 @@
 
 # include "ThreadPool.h"
 # define NUM_WORKERS std::max(1u, std::thread::hardware_concurrency())
-# define WORK_TIMEOUT 100ms
+# define WORK_TIMEOUT 2000ms
 using namespace std::literals;
 
 class UnitTest;
