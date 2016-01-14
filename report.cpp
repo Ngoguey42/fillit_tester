@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:38:58 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/14 11:53:59 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/14 12:30:09 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -84,6 +84,8 @@ static void report_diff(UnitTest const &ta, UnitTest const &tb)
 	std::ofstream f;
 	std::string const fname = std::string("./log/DIFF_")
 		+ escape(ta.argv1) + ".txt";
+	std::string const syscmd = std::string("diff tmpa tmpb >> ")
+		+ fname + "; rm -rf tmpa tmpb";
 
 	f.open(fname, std::ios_base::out | std::ios_base::trunc);
 	f << "over: \"" << ta.argv1 << "\"\n";
@@ -98,8 +100,16 @@ static void report_diff(UnitTest const &ta, UnitTest const &tb)
 	f << "===================================================\n";
 	f << tb.output;
 	f << "===================================================\n";
-	// TODO: output diff at the end of the file
+	f << "diff:" << "\n";
+	f << "===================================================\n";
 	f.close();
+	f.open("tmpa", std::ios_base::out | std::ios_base::trunc);
+	f << ta.output;
+	f.close();
+	f.open("tmpb", std::ios_base::out | std::ios_base::trunc);
+	f << tb.output;
+	f.close();
+	::system(syscmd.c_str());
 	return ;
 }
 

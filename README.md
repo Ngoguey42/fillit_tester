@@ -19,8 +19,7 @@
 ```
 todo:
 - dispatch includes in .cpp files
-
 - use clock instead of chrono for some measures
-- output diff at the end of diff log report
 - screenshot
 - more info in readme (WORK_TIMEOUT, NUM_WORKERS in tester.hpp) etc...
+- more timings info
