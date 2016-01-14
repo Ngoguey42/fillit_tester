@@ -105,6 +105,24 @@ static Piece &randPiece(pmap_t &pmap, pset_t &pset)
 	assert(false); /* should not be reached */
 }
 
+char const b62[] = "0123456789"
+				  "abcdefghijklmnopqrstuvwxyz"
+				  "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+static std::string itostrb62(unsigned int i)
+{
+	std::string str;
+
+	if (i == 0)
+		return "0";
+	while (i != 0)
+	{
+		str.insert(str.begin(), b62[i % 62]);
+		i /= 62;
+	}
+	return str;
+}
+
 
 static std::string filename_of_pvec(std::vector<Piece> const &pvec)
 {
@@ -112,7 +130,7 @@ static std::string filename_of_pvec(std::vector<Piece> const &pvec)
 
 	for (auto const &p : pvec)
 	{
-		ret.append(std::to_string(p.uid()));
+		ret.append(itostrb62(p.uid()));
 		ret.append("_");
 	}
 	if (ret.size() > 200)
@@ -135,11 +153,21 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 	int const ntests = std::atoi(av[2]);
 	std::string fname;
 	std::ofstream f;
+	int err;
 
-	assert(pptest >= 0); /* wrong av[1] */
-	assert(ntests > 0); /* wrong av[2] */
+	if (pptest < 0)
+	{
+		std::cerr << "Bad grids per tests " << pptest << std::endl;
+		::exit(1);
+	}
+	if (ntests <= 0)
+	{
+		std::cerr << "Bad num tests " << ntests << std::endl;
+		::exit(1);
+	}
 	gen(p, pmap, pset, 0, 0);
-	::system("rm -rf map log; mkdir -p log map");
+	err = ::system("rm -rf map log; mkdir -p log map; false");
+	assert(err >= 0);
 	for (int i = 0; i < ntests; i++)
 	{
 		pvec.clear();

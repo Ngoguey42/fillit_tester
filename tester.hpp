@@ -1,3 +1,14 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   tester.hpp                                         :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2016/01/14 11:51:01 by ngoguey           #+#    #+#             //
+//   Updated: 2016/01/14 12:13:04 by ngoguey          ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
 
 #ifndef TESTER_HPP
 # define TESTER_HPP
@@ -20,11 +31,11 @@
 # include <fcntl.h>
 # include <errno.h>
 # include <signal.h>
-# include <sys/types.h> 
+# include <sys/types.h>
 # include <sys/wait.h>
 
 # include "ThreadPool.h"
-# define NUM_WORKERS 4
+# define NUM_WORKERS std::max(1u, std::thread::hardware_concurrency())
 # define WORK_TIMEOUT 100ms
 using namespace std::literals;
 
@@ -42,14 +53,14 @@ public:
 	UnitTest(char const *bp, std::string const &av1)
 		: binary_path(bp)
 		, argv1(av1)
-		, timeout{}, status{}, err{}, time{}, output{}
+		, timeout{}, status{}, err{}, duration{}, output{}
 		{}
 
 
 	UnitTest(UnitTest &&src)
 		: binary_path(src.binary_path)
 		, argv1(std::move(src.argv1))
-		, timeout{}, status{}, err{}, time{}, output{}
+		, timeout{}, status{}, err{}, duration{}, output{}
 		{}
 	~UnitTest(){}
 
@@ -65,7 +76,7 @@ public:
 	bool timeout;
 	int status[1];
 	bool err;
-	std::chrono::duration<double, std::milli> time;
+	std::chrono::duration<double, std::milli> duration;
 	std::string output;
 
 private:

@@ -1,9 +1,42 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   report.cpp                                         :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2016/01/14 11:38:58 by ngoguey           #+#    #+#             //
+//   Updated: 2016/01/14 11:53:59 by ngoguey          ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
 
 #include "tester.hpp"
 
 using namespace std::chrono;
 
-#define MSTOI(T) duration_cast<milliseconds>((T)).count()
+#define STRINGIFY(...) static_cast<std::ostringstream&>(std::ostringstream{}.flush() << __VA_ARGS__).str()
+
+template<class T>
+static std::string durToStr(T dur)
+{
+	double d;
+
+	if (dur >= 1s)
+	{
+		d = duration_cast<milliseconds>(dur).count();
+		return STRINGIFY(d / 1000.) + "s";
+	}
+	else if (dur >= 1ms)
+	{
+		d = duration_cast<microseconds>(dur).count();
+		return STRINGIFY(d / 1000.) + "ms";
+	}
+	else
+	{
+		d = duration_cast<nanoseconds>(dur).count();
+		return STRINGIFY(d / 1000.) + "us";
+	}
+}
 
 static std::string escape(std::string s)
 {
@@ -41,7 +74,7 @@ static void report_crash(UnitTest const &t)
 	f << t.binary_path << '\n';
 	f << crashname << '\n';
 	f << "over: \"" << t.argv1 << "\"\n";
-	f << "ran for: " << MSTOI(t.time) << "ms\n";
+	f << "ran for: " << durToStr(t.duration) << "\n";
 	f.close();
 	return ;
 }
@@ -56,12 +89,12 @@ static void report_diff(UnitTest const &ta, UnitTest const &tb)
 	f << "over: \"" << ta.argv1 << "\"\n";
 	f << "===================================================\n";
 	f << ta.binary_path << " output:\n";
-	f << "ran for: " << MSTOI(ta.time) << "ms\n";
+	f << "ran for: " << durToStr(ta.duration) << "\n";
 	f << "===================================================\n";
 	f << ta.output;
 	f << "===================================================\n";
 	f << tb.binary_path << " output:\n";
-	f << "ran for: " << MSTOI(tb.time) << "ms\n";
+	f << "ran for: " << durToStr(tb.duration) << "\n";
 	f << "===================================================\n";
 	f << tb.output;
 	f << "===================================================\n";
@@ -80,8 +113,8 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 
 	for(int i = 0; i < tasks.size(); i += 2)
 	{
-		durs[0] += tasks[i].time;
-		durs[1] += tasks[i + 1].time;
+		durs[0] += tasks[i].duration;
+		durs[1] += tasks[i + 1].duration;
 		fterrs[0] += (int)tasks[i].err;
 		fterrs[1] += (int)tasks[i + 1].err;
 		to[0] += (int)tasks[i].timeout;
@@ -105,7 +138,7 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 		<< std::atoi(av[2]) << " map(s) of size "
 		<< std::atoi(av[1]) << " generated in ./map" << std::endl;
 	std::cout
-		<< "WORK_TIMEOUT set to " << MSTOI(WORK_TIMEOUT) << "ms ; "
+		<< "WORK_TIMEOUT set to " << durToStr(WORK_TIMEOUT) << " ; "
 		<< NUM_WORKERS << " programs running in parallel" << std::endl;
 	std::cout << std::endl;
 	for (int i = 0; i < 2; i++)
@@ -117,7 +150,7 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 			<< fterrs[i] << " crash(s); " << std::endl
 			<< errs[i] << " \"error\\n\" output(s); " << std::endl
 			<< to[i] << " time out(s); "
-			<< MSTOI(durs[i]) << "ms total time" << std::endl;
+			<< durToStr(durs[i]) << " total time" << std::endl;
 	}
 	std::cout << std::endl;
 	std::cout << diffs << " diffs" << std::endl;

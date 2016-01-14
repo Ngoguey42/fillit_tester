@@ -1,3 +1,14 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   execute.cpp                                        :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2016/01/14 11:51:03 by ngoguey           #+#    #+#             //
+//   Updated: 2016/01/14 12:10:14 by ngoguey          ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
 
 #include "tester.hpp"
 extern char **environ;
@@ -13,8 +24,8 @@ static void wait_child(UnitTest &t, pid_t pid)
 		err = ::waitpid(pid, t.status, WNOHANG);
 		if (err == 0)
 		{
-			t.time = std::chrono::high_resolution_clock::now() - start;
-			if (t.time > WORK_TIMEOUT)
+			t.duration = std::chrono::high_resolution_clock::now() - start;
+			if (t.duration > WORK_TIMEOUT)
 			{
 				(void)::kill(pid, SIGKILL); /*not checking ret*/
 				t.timeout = true;
@@ -42,7 +53,8 @@ static void child_routine(UnitTest &t, WorkerData &w)
 	err = ::dup2(w.pipe[1], 1);
 	assert(err == 1); /*dup2 failed*/
 	::execve(av0, (char *[]){av0, av1, NULL}, environ);
-	assert(false); /*execve failed, av[3] or av[4] must be wrong*/
+	std::cerr << "Could not run \"" << av0 << "\"" << std::endl;
+	::exit(1);
 	return ;
 }
 
@@ -60,10 +72,7 @@ static int work(UnitTest &t)
 	assert(pid > 0); /*fork failed*/
 	wait_child(t, pid);
 	if (WIFSIGNALED(*t.status) && !t.timeout)
-	{
-		std::cerr << *t.status << std::endl;
 		t.err = true;
-	}
 	do // Retrieving child process output with nonblocking read
 	{
 		ret = ::read(w.pipe[0], buf, sizeof(buf));
