@@ -13,13 +13,16 @@
 #ifndef TESTER_HPP
 # define TESTER_HPP
 
-# include <string>
-# include <vector>
-# include <utility>
 # include <unordered_map>
+# include <map>
+# include <unordered_set>
+# include <set>
+# include <vector>
+
+# include <string>
+# include <utility>
 # include <iostream>
 # include <chrono>
-# include <unordered_set>
 # include <sstream>
 # include <fstream>
 # include <algorithm>
@@ -34,10 +37,10 @@
 # include <sys/types.h>
 # include <sys/wait.h>
 
-# include "ThreadPool.h"
+// # include "ThreadPool.h"
 # define NUM_WORKERS std::max(1u, std::thread::hardware_concurrency())
 # define WORK_TIMEOUT 2000ms
-using namespace std::literals;
+// using namespace std::chrono_literals;
 
 class UnitTest;
 
@@ -81,7 +84,7 @@ public:
 
 private:
 };
-
+#ifdef TMPLOL //debug
 class WorkerData
 {
 	/* CONSTRUCTION ***************** */
@@ -125,5 +128,5 @@ private:
 	static std::unordered_map<std::thread::id, WorkerData*>	map;
 	static std::mutex map_mutex;
 };
-
+#endif //debug
 #endif
