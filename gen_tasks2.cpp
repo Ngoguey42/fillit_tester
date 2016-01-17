@@ -1,3 +1,14 @@
+// ************************************************************************** //
+//                                                                            //
+//                                                        :::      ::::::::   //
+//   gen_tasks2.cpp                                     :+:      :+:    :+:   //
+//                                                    +:+ +:+         +:+     //
+//   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
+//                                                +#+#+#+#+#+   +#+           //
+//   Created: 2016/01/17 11:04:12 by ngoguey           #+#    #+#             //
+//   Updated: 2016/01/17 12:03:04 by ngoguey          ###   ########.fr       //
+//                                                                            //
+// ************************************************************************** //
 
 #include "tester.hpp"
 
@@ -65,26 +76,38 @@ struct Piece
 class TasksStash
 {
 private:
-	typedef std::unordered_set<unsigned int> shapehset_t;
-	typedef std::unordered_map<unsigned int, Piece> uidhmap_t;
-	typedef std::multimap<unsigned int, unsigned int> shapemmap_t;
-	typedef std::vector<unsigned int> uidcombo_t;
-	// typedef std::unordered_set<uidcombo_t> combohset_t;
-
 	/* ATTRIBUTES ******************* */
-	static unsigned int constexpr numShape = 19;
-	static unsigned int constexpr numValidUid = 113;
+	static constexpr unsigned int numShape = 19;
+	static constexpr unsigned int numValidUid = 113;
 	unsigned int const _pc_count;
 
-	shapehset_t _shapesHSet;
-	uidhmap_t _uidsHMap;
-	shapemmap_t _shapesMMap;
-	// combohset_t _combosHSet;
+	typedef std::unordered_set<unsigned int> shapehset_t;
+	shapehset_t _shapesHSet;/* 19 (Piece.shape) */
+
+	typedef std::unordered_map<unsigned int, Piece> uidhmap_t;
+	uidhmap_t _uidsHMap;/* 113 (Piece.uid * Piece) */
+
+	typedef std::multimap<unsigned int, unsigned int> shapemmap_t;
+	shapemmap_t _shapesMMap;/* 113 (Piece.shape * Piece.uid) */
+
+	typedef std::vector<shapemmap_t::const_iterator> uidcombo_t;
+	// typedef std::vector<unsigned int> uidcombo_t;
+	struct Hash {
+		std::size_t operator ()(uidcombo_t const &combo) {
+			std::size_t h;
+
+			for (auto const &it : combo)
+				h += std::hash<unsigned int>()(it->second);
+			return 0;
+		}
+	};
+	typedef std::unordered_set<uidcombo_t, Hash> combohset_t;
+	combohset_t _combosHSet;
 
 public:
 	/* CONSTRUCTION ***************** */
 	TasksStash(unsigned int pc_count) : _pc_count(pc_count){
-		
+
 		assert(numShape == _shapesHSet.size());
 		assert(numValidUid == _uidsHMap.size());
 		assert(numValidUid == _shapesMMap.size());
@@ -103,11 +126,11 @@ public:
 
 	// auto begin();
 	// auto end();
-	
+
 private:
 	/* INTERNAL ******************** */
-	unsigned int randomShape(void)
-	{
+	unsigned int _randomShape(void) {
+
 		int const n = std::rand() % numShape;
 		int i = 0;
 
@@ -116,8 +139,8 @@ private:
 				return t;
 		assert(false); /* should not be reached */
 	}
-	shapemmap_t::const_iterator randomPieceOfShape(unsigned int shp)
-	{
+	shapemmap_t::const_iterator _randomPieceOfShape(unsigned int shp) {
+
 		unsigned int const n = std::rand() % _shapesMMap.count(shp);
 		auto const range = _shapesMMap.equal_range(shp);
 		int i = 0;
@@ -128,15 +151,53 @@ private:
 		assert(false); /* should not be reached */
 	}
 
-	shapemmap_t::const_iterator randomUid(void) {
-		return randomPieceOfShape(randomShape());
-	}
-	
-	// combo_t makeCombo(void) {
-		// combo_t combo(this->_pc_count);
+	shapemmap_t::const_iterator _randomUid(void) {
 
-		// for (int i = 0; i < this->_pc_count; i++)
-			// combo[i]
+		return _randomPieceOfShape(_randomShape());
+	}
+	// uidcombo_t _comboFromComboit(uiditcombo_t const &combo) {
+
+	// 	uidcombo_t ret(combo.size());
+	// 	auto outputit = ret.begin();
+
+	// 	for (auto const &inputit : combo)
+	// 		*outputit++ = inputit->second;
+	// 	return ret;
 	// }
+	shapemmap_t::const_iterator _nextUid(shapemmap_t::const_iterator const &it){
+
+		shapemmap_t::const_iterator ret;
+
+		ret = std::next(it);
+		if (ret == _shapesMMap.end())
+			return _shapesMMap.begin();
+		return ret;
+	}
+
+	uidcombo_t _randomCombo(void) {
+
+		uidcombo_t comboRand(_pc_count);
+		uidcombo_t combo;
+		int level;
+		shapemmap_t::const_iterator it;
+
+		for (auto &uid : comboRand)
+			uid = _randomUid();
+		combo = comboRand;
+		level = _pc_count - 1;
+		it = comboRand[level];
+		while (_combosHSet.find(combo) != _combosHSet.end())
+		{
+			assert(level >= 0);
+			it = _nextUid(it);
+			combo[level] = it;
+			if (it == comboRand[level])
+			{
+				level--;
+				it = comboRand[level];
+			}
+		}
+		return combo;
+	}
 
 };

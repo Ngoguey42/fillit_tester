@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:51:01 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/14 13:05:02 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 11:03:55 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -37,7 +37,7 @@
 # include <sys/types.h>
 # include <sys/wait.h>
 
-// # include "ThreadPool.h"
+# include "ThreadPool.h"
 # define NUM_WORKERS std::max(1u, std::thread::hardware_concurrency())
 # define WORK_TIMEOUT 2000ms
 // using namespace std::chrono_literals;
@@ -84,7 +84,7 @@ public:
 
 private:
 };
-#ifdef TMPLOL //debug
+// #ifdef TMPLOL //debug
 class WorkerData
 {
 	/* CONSTRUCTION ***************** */
@@ -128,5 +128,5 @@ private:
 	static std::unordered_map<std::thread::id, WorkerData*>	map;
 	static std::mutex map_mutex;
 };
-#endif //debug
+// #endif //debug
 #endif
