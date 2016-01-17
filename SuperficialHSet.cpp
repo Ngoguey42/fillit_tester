@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 20:37:12 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 20:52:28 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 21:07:29 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -26,15 +26,22 @@ using SHS = SuperficialHSet;
 
 /* CONSTRUCTION ***************** */
 SHS::SuperficialHSet(PiecesStash const &ps, unsigned int pc_count)
-	:  IComboGen(), _ps(ps), _combosHSet{}, _pc_count(pc_count)
+	: IComboGen(), _ps(ps), _combosHSet{}, _pc_count(pc_count)
 	{
 
 	}
+
 SHS::~SuperficialHSet() {}
 
 /* EXPOSED ********************** */
 void SHS::giveNextCombo(std::vector<Piece const *> &vec) {
 
+	auto combo = _randomCombo();
+	int i;
+
+	for (auto const pc_it : combo)
+		vec[i++] = &_ps.uidsHMap().at(pc_it->second);
+	_combosHSet.insert(std::move(combo));
 	return ;
 }
 

@@ -1,16 +1,18 @@
 // ************************************************************************** //
 //                                                                            //
 //                                                        :::      ::::::::   //
-//   gen_tasks2.cpp                                     :+:      :+:    :+:   //
+//   gen_tasks.cpp                                      :+:      :+:    :+:   //
 //                                                    +:+ +:+         +:+     //
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
-//   Created: 2016/01/17 11:04:12 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 20:10:54 by ngoguey          ###   ########.fr       //
+//   Created: 2016/01/17 20:58:11 by ngoguey           #+#    #+#             //
+//   Updated: 2016/01/17 21:11:51 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 #include "tester.hpp"
+#include "SuperficialHSet.hpp"
+#include "ExhaustiveHeap.hpp"
 
 // # include <unordered_map>
 // # include <map>
@@ -22,178 +24,19 @@
 // # include <fstream>
 // # include <assert.h>
 
-class ComboGenerator
-{
-private:
-	/* ATTRIBUTES ******************* */
-	static constexpr unsigned int numShape = 19;
-	static constexpr unsigned int numValidUid = 113;
-	unsigned int const _pc_count;
 
-	using shapehset_t = ValidPiecesGenerator::shapehset_t;
-	shapehset_t const _shapesHSet;/* 19 (Piece.shape) */
-
-	using uidhmap_t = ValidPiecesGenerator::uidhmap_t;
-	uidhmap_t const _uidsHMap;/* 113 (Piece.uid * Piece) */
-
-	using shapemmap_t = ValidPiecesGenerator::shapemmap_t;
-	shapemmap_t const _shapesMMap;/* 113 (Piece.shape * Piece.uid) */
-
-	typedef std::vector<shapemmap_t::const_iterator> uidcombo_t;
-	struct HashCombo {
-		std::size_t operator () (uidcombo_t const &combo) const {
-			std::size_t h;
-
-			for (auto const &it : combo)
-				h += std::hash<unsigned int>()(it->second);
-			return 0;
-		}
-	};
-public:
-	typedef std::unordered_set<uidcombo_t, HashCombo> combohset_t;
-private:
-	combohset_t _combosHSet;
-
-public:
-	/* CONSTRUCTION ***************** */
-	ComboGenerator(unsigned int pc_count, shapehset_t &&shapesHSet
-				   , uidhmap_t &&uidsHMap, shapemmap_t &&shapesMMap)
-		: _pc_count(pc_count), _shapesHSet(shapesHSet)
-		, _uidsHMap(uidsHMap), _shapesMMap(shapesMMap) {
-
-		assert(numShape == _shapesHSet.size());
-		assert(numValidUid == _uidsHMap.size());
-		assert(numValidUid == _shapesMMap.size());
-	}
-
-	~ComboGenerator(){}
-
-	ComboGenerator() = delete;
-	ComboGenerator(ComboGenerator const &src) = delete;
-	ComboGenerator(ComboGenerator &&src) = delete;
-	ComboGenerator &operator=(ComboGenerator const &rhs) = delete;
-	ComboGenerator &operator=(ComboGenerator &&rhs) = delete;
-
-private:
-	/* INTERNAL ********************* */
-	unsigned int _randomShape(void) const {
-
-		int const n = std::rand() % numShape;
-		int i = 0;
-
-		for (auto t : _shapesHSet)
-			if (i++ == n)
-				return t;
-		assert(false); /* should not be reached */
-	}
-	shapemmap_t::const_iterator _randomPieceOfShape(unsigned int shp) const {
-
-		unsigned int const n = std::rand() % _shapesMMap.count(shp);
-		auto const range = _shapesMMap.equal_range(shp);
-		int i = 0;
-
-		for (auto it = range.first; it != range.second; ++it)
-			if (i++ == n)
-				return it;
-		assert(false); /* should not be reached */
-	}
-
-	shapemmap_t::const_iterator _randomUid(void) const {
-
-		return _randomPieceOfShape(_randomShape());
-	}
-
-	/* Circularily increments an iterator over the Multimap */
-	shapemmap_t::const_iterator _nextUid(
-		shapemmap_t::const_iterator const &it) const {
-
-		shapemmap_t::const_iterator ret;
-
-		ret = std::next(it);
-		if (ret == _shapesMMap.end())
-			return _shapesMMap.begin();
-		return ret;
-	}
-
-	/* Generates a combo, may exist in _combosHSet */
-	uidcombo_t _randomComboRaw(void) const {
-
-		uidcombo_t ret;
-
-		for (int i = 0; i < _pc_count; i++)
-			ret.push_back(_randomUid());
-		return ret;
-	}
-
-	/* Increments a combo over 1 or more components */
-	void _incrementCombo(uidcombo_t &combo, uidcombo_t const &comboRand) const {
-
-		int level;
-		shapemmap_t::const_iterator it;
-
-		level = _pc_count;
-		do {
-			--level;
-			combo[level] = _nextUid(combo[level]);
-		} while (combo[level] == comboRand[level]);
-		return ;
-	}
-
-	/* Generates a combo, not existing in _combosHSet */
-	uidcombo_t _randomCombo(void) const {
-
-		uidcombo_t const comboRand(_randomComboRaw());
-		uidcombo_t combo(comboRand);
-
-		while (_combosHSet.find(combo) != _combosHSet.end())
-			_incrementCombo(combo, comboRand);
-		return combo;
-	}
-
-public:
-#define D(V) static_cast<double>((V))
-#define UI(V) static_cast<unsigned int>((V))
-	void gen(unsigned int size) {
-
-		size = UI(std::min(D(size), std::pow(D(numValidUid), D(_pc_count))));
-		_combosHSet.clear();
-		_combosHSet.reserve(size);
-		for (int i = 0; i < size; i++)
-		{
-			if (i % 1000 == 0)
-				std::cerr << "Noooooo" << i  << std::endl;
-			_combosHSet.insert(_randomCombo());
-		}
-		return ;
-	}
-
-	combohset_t::const_iterator begin(void) const {
-
-		return _combosHSet.begin();
-	}
-	combohset_t::const_iterator end(void) const {
-
-		return _combosHSet.end();
-	}
-
-	void convertCombo(combohset_t::const_iterator const &it
-					  , std::vector<Piece const *> &vec) const {
-
-		uidcombo_t const &combo = *it;
-		int i;
-
-		i = 0;
-		assert(vec.size() == _pc_count);
-		vec.reserve(_pc_count);
-		for (auto const &uidIt : combo)
-			vec[i++] = &_uidsHMap.at(uidIt->second);
-		return ;
-	}
-};
+template <class T>
+static constexpr double dbl(T v) {
+	return static_cast<double>(v);
+}
+template <class T>
+static constexpr ssize_t ll(T v) {
+	return static_cast<ssize_t>(v);
+}
 
 char const b62[] = "0123456789"
-				  "abcdefghijklmnopqrstuvwxyz"
-				  "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	"abcdefghijklmnopqrstuvwxyz"
+	"ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 static std::string itostrb62(unsigned int i)
 {
@@ -229,19 +72,17 @@ static std::string filename_of_pcvec(std::vector<Piece const*> const &pcvec)
 
 
 static auto build_files_and_tests(
-	ComboGenerator &cg, char const *const av[], int const pptest)
+	IComboGen *cg, char const *const av[], int const pptest, int const ntests)
 	-> std::vector<UnitTest>
 {
 	std::vector<UnitTest> tasks;
 	std::vector<Piece const *> pcvec(pptest);
-	auto it = cg.begin();
-	auto const ite = cg.end();
 	std::string fname;
 	std::ofstream f;
 
-	while (it != ite)
+	for (int i = 0; i < ntests; i++)
 	{
-		cg.convertCombo(it, pcvec);
+		cg->giveNextCombo(pcvec);
 		fname = filename_of_pcvec(pcvec);
 		f.open(fname, std::ios_base::out | std::ios_base::trunc);
 		assert(f.good()); /* file creation failed */
@@ -256,7 +97,6 @@ static auto build_files_and_tests(
 		assert(f.good()); /* file close failed */
 		tasks.push_back(UnitTest(av[3], fname));
 		tasks.push_back(UnitTest(av[4], fname));
-		it++;
 	}
 	return std::move(tasks);
 }
@@ -264,15 +104,18 @@ static auto build_files_and_tests(
 #define MVGET(TUP, I) std::move(std::get<I>(TUP))
 std::vector<UnitTest> build_tasks(char const *const av[])
 {
-	int const pptest = std::atoi(av[1]);
+	int const npcs = std::atoi(av[1]);
 	int const ntests = std::atoi(av[2]);
-	auto pcs = ValidPiecesGenerator()();
-	ComboGenerator cg(pptest, MVGET(pcs, 0), MVGET(pcs, 1), MVGET(pcs, 2));
+	double maxtestsf;
+	double ntestsf;
+	PiecesStash const ps;
+	// IComboGen *cg;
+	std::unique_ptr<IComboGen> cg;
 	int err;
 
-	if (pptest < 0)
+	if (npcs < 0)
 	{
-		std::cerr << "Bad grids per tests " << pptest << std::endl;
+		std::cerr << "Bad grids per tests " << npcs << std::endl;
 		::exit(1);
 	}
 	if (ntests <= 0)
@@ -280,14 +123,22 @@ std::vector<UnitTest> build_tasks(char const *const av[])
 		std::cerr << "Bad num tests " << ntests << std::endl;
 		::exit(1);
 	}
+
 	std::cout << "\rRemoving ./map ./log                      ";
 	std::cout.flush();
 	err = ::system("rm -rf map log; mkdir -p log map; false");
 	assert(err >= 0);
+
 	std::cout << "\rGenerating combinations                   ";
 	std::cout.flush();
-	cg.gen(ntests);
+	maxtestsf = std::pow(dbl(PiecesStash::numValidUid), dbl(npcs));
+	ntestsf = std::min(dbl(ntests), maxtestsf);
+	if (ntestsf / maxtestsf > .5) /*more than half of overall tests to gen*/
+		cg.reset(new ExhaustiveHeap(ps, npcs));
+	else
+		cg.reset(new SuperficialHSet(ps, npcs));
+
 	std::cout << "\rGenerating map files                      ";
 	std::cout.flush();
-	return build_files_and_tests(cg, av, pptest);
+	return build_files_and_tests(cg.get(), av, npcs, ll(ntestsf));
 }
