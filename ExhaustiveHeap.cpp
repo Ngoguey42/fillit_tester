@@ -148,8 +148,8 @@ void EH::_randomPop(std::vector<unsigned int> &combo)
 			// << ": " <<  << std::endl
 			// << ": " <<  << std::endl
 			// << std::endl;
-		while (sum <= choice + 1)
-			sum += lvl->sublvls[sublvl++].count;
+		while (sum <= choice)
+			sum += lvl->sublvls[++sublvl].count;
 		lvlcount = lvl->sublvls[sublvl].count;
 		lvl->sublvls[sublvl].count--;
 		combo[depth] = lvl->sublvls[sublvl].uid;
