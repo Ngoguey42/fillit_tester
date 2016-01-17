@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 11:04:12 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 15:04:01 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 16:08:24 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -73,36 +73,50 @@ struct Piece
 	}
 };
 
-struct ValidPiecesGenerator
+struct PiecesStash
 {
 public:
+	/* TYPES ************************ */
 	typedef std::unordered_set<unsigned int> shapehset_t;
 	typedef std::unordered_map<unsigned int, Piece> uidhmap_t;
 	typedef std::multimap<unsigned int, unsigned int> shapemmap_t;
 
-	ValidPiecesGenerator() : _shapesHSet{}, _uidsHMap{}, _shapesMMap{} {}
-	~ValidPiecesGenerator() {}
-
-	ValidPiecesGenerator(ValidPiecesGenerator const &src) = delete;
-	ValidPiecesGenerator(ValidPiecesGenerator &&src) = delete;
-	ValidPiecesGenerator &operator=(ValidPiecesGenerator const &rhs) = delete;
-	ValidPiecesGenerator &operator=(ValidPiecesGenerator &&rhs) = delete;
-
-	auto operator ()(void)
-		-> std::tuple<shapehset_t, uidhmap_t, shapemmap_t> {
-
-		Piece p = {"....", "....", "....", "...."};
-
-		_gen(p, 0, 0);
-		return {std::move(_shapesHSet), std::move(_uidsHMap)
-				, std::move(_shapesMMap)};
-	}
-
 private:
+	/* ATTRIBUTES ******************* */
 	shapehset_t _shapesHSet;
 	uidhmap_t _uidsHMap;
 	shapemmap_t _shapesMMap;
 
+public:
+	/* CONSTRUCTION ***************** */
+	PiecesStash() : _shapesHSet{}, _uidsHMap{}, _shapesMMap{} {
+
+		Piece p = {"....", "....", "....", "...."};
+
+		_gen(p, 0, 0);
+		return ;
+		}
+	~PiecesStash() {}
+
+	PiecesStash(PiecesStash const &) = delete;
+	PiecesStash(PiecesStash &&) = delete;
+	auto operator=(PiecesStash const &) = delete;
+	auto operator=(PiecesStash &&) = delete;
+
+public:
+	/* EXPOSED ********************** */
+	shapehset_t const &shapesHSet(void) const {
+		return _shapesHSet;
+	}
+	uidhmap_t const &uidsHMap(void) const {
+		return _uidsHMap;
+	}
+	shapemmap_t const &shapesMMap(void) const {
+		return _shapesMMap;
+	}
+
+private:
+	/* INTERNAL ********************* */
 	void _savePiece (Piece const &pc) {
 
 		unsigned int const shape = pc.shape();
@@ -137,6 +151,22 @@ private:
 };
 
 
+class ExhaustiveHeap
+{
+
+
+public:
+	/* CONSTRUCTION ***************** */
+	~ExhaustiveHeap(){}
+
+	ExhaustiveHeap() = delete;
+	ExhaustiveHeap(ExhaustiveHeap const &src) = delete;
+	ExhaustiveHeap(ExhaustiveHeap &&src) = delete;
+	ExhaustiveHeap &operator=(ExhaustiveHeap const &rhs) = delete;
+	ExhaustiveHeap &operator=(ExhaustiveHeap &&rhs) = delete;
+
+};
+
 class ComboGenerator
 {
 private:
@@ -156,7 +186,7 @@ private:
 
 	typedef std::vector<shapemmap_t::const_iterator> uidcombo_t;
 	struct HashCombo {
-		std::size_t operator ()(uidcombo_t const &combo) const {
+		std::size_t operator () (uidcombo_t const &combo) const {
 			std::size_t h;
 
 			for (auto const &it : combo)
@@ -190,7 +220,7 @@ public:
 	ComboGenerator &operator=(ComboGenerator &&rhs) = delete;
 
 private:
-	/* INTERNAL ******************** */
+	/* INTERNAL ********************* */
 	unsigned int _randomShape(void) const {
 
 		int const n = std::rand() % numShape;
@@ -271,12 +301,12 @@ public:
 	void gen(unsigned int size) {
 
 		size = UI(std::min(D(size), std::pow(D(numValidUid), D(_pc_count))));
-		// std::cerr << size << std::endl;
 		_combosHSet.clear();
 		_combosHSet.reserve(size);
 		for (int i = 0; i < size; i++)
 		{
-			std::cerr << "Noooooo" << i  << std::endl;
+			if (i % 1000 == 0)
+				std::cerr << "Noooooo" << i  << std::endl;
 			_combosHSet.insert(_randomCombo());
 		}
 		return ;
