@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 11:04:12 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 12:03:04 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 12:18:38 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -155,15 +155,8 @@ private:
 
 		return _randomPieceOfShape(_randomShape());
 	}
-	// uidcombo_t _comboFromComboit(uiditcombo_t const &combo) {
 
-	// 	uidcombo_t ret(combo.size());
-	// 	auto outputit = ret.begin();
-
-	// 	for (auto const &inputit : combo)
-	// 		*outputit++ = inputit->second;
-	// 	return ret;
-	// }
+	/* Circularily increments an iterator over the Multimap */
 	shapemmap_t::const_iterator _nextUid(shapemmap_t::const_iterator const &it){
 
 		shapemmap_t::const_iterator ret;
@@ -174,29 +167,38 @@ private:
 		return ret;
 	}
 
-	uidcombo_t _randomCombo(void) {
+	/* Generates a combo, may exist in _combosHSet */
+	uidcombo_t _randomComboRaw(void) { //TODO: drop const everywhere
 
-		uidcombo_t comboRand(_pc_count);
-		uidcombo_t combo;
+		uidcombo_t ret;
+
+		for (auto &uid : ret)
+			uid = _randomUid();
+		return ret;
+	}
+
+	/* Increments a combo over 1 or more componants */
+	void _incrementCombo(uidcombo_t &combo, uidcombo_t const &comboRand) {
+
 		int level;
 		shapemmap_t::const_iterator it;
 
-		for (auto &uid : comboRand)
-			uid = _randomUid();
-		combo = comboRand;
-		level = _pc_count - 1;
-		it = comboRand[level];
+		level = _pc_count;
+		do {
+			--level;
+			combo[level] = _nextUid(combo[level]);
+		} while (combo[level] == comboRand[level]);
+		return ;
+	}
+
+	/* Generates a combo, not existing in _combosHSet */
+	uidcombo_t _randomCombo(void) {
+
+		uidcombo_t const comboRand(_randomComboRaw());
+		uidcombo_t combo(comboRand);
+
 		while (_combosHSet.find(combo) != _combosHSet.end())
-		{
-			assert(level >= 0);
-			it = _nextUid(it);
-			combo[level] = it;
-			if (it == comboRand[level])
-			{
-				level--;
-				it = comboRand[level];
-			}
-		}
+			_incrementCombo(combo, comboRand);
 		return combo;
 	}
 
