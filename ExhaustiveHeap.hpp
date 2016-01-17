@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 16:25:15 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 19:57:19 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 20:26:37 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -16,9 +16,10 @@
 # include <vector>
 # include <array>
 
+# include "IComboGen.hpp"
 # include "PiecesStash.hpp"
 
-class ExhaustiveHeap
+class ExhaustiveHeap : IComboGen
 {
 
 private:
@@ -27,15 +28,6 @@ private:
 	{
 		unsigned int uid;
 		unsigned int count;
-		/*
-		** If SubLevel is terminal:
-		**   If Terminal is available:
-		**         count == 1
-		**   If Terminal is NOT available:
-		**         count == 0
-		** If SubLevel is NOT terminal:
-		**   count == nAvailable is its SubLevels
-		*/
 	};
 	struct Level
 	{
@@ -45,9 +37,11 @@ private:
 
 private:
 	/* ATTRIBUTES ******************* */
+	PiecesStash const &_ps;
 	std::vector<Level> _heap;
 	unsigned int const _npcs;
 	unsigned int _count;
+	std::vector<unsigned int> _uidCombo;
 
 public:
 	/* CONSTRUCTION ***************** */
@@ -62,13 +56,13 @@ public:
 
 public:
 	/* EXPOSED ********************** */
-	void randomPop(std::vector<unsigned int> &combo);
+	void giveNextCombo(std::vector<Piece const *> &vec) override;
 
 private:
     /* INTERNAL ********************* */
-	void _allocHeap(PiecesStash const &ps, size_t heap_sizei);
+	void _allocHeap(size_t heap_sizei);
 	void _finalizeHeap(unsigned int depth, unsigned int nleaves);
-
+	void _randomPop(std::vector<unsigned int> &combo);
 
 };
 

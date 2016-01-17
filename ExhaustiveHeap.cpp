@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 16:26:13 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 19:59:47 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 20:30:06 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -36,7 +36,7 @@ static constexpr size_t powui(size_t const x, size_t e) {
 
 /* CONSTRUCTION ***************** */
 EH::ExhaustiveHeap(PiecesStash const &ps, unsigned int npcs)
-	: _heap(), _npcs(npcs), _count()
+	: IComboGen(), _ps(ps), _heap(), _npcs(npcs), _count(), _uidCombo(npcs)
 {
 	double const num_leavesf =
 		std::pow(dbl(PiecesStash::numValidUid), dbl(npcs));
@@ -51,21 +51,9 @@ EH::ExhaustiveHeap(PiecesStash const &ps, unsigned int npcs)
 
 	assert(mem_reqf > 0.);
 	assert(mem_reqf < std::pow(10., 9.) * 2.);
-	_allocHeap(ps, heap_sizei);
-	_finalizeHeap(0, num_leavesi);
+	_allocHeap(heap_sizei);
+  	_finalizeHeap(0, num_leavesi);
 	_count = num_leavesi;
-
-
-	// this->randomPop();
-	// this->randomPop();
-	unsigned int lol = _count - 1;
-	std::vector<unsigned int> combo;
-
-	combo.resize(_npcs);
-	for (int i = 0; i < lol; i++)
-		this->randomPop(combo);
-
-
 	// std::cout << _count << std::endl;
 	// std::cout << "" << std::endl;
 	// for (auto const &lvl: _heap)
@@ -82,7 +70,55 @@ EH::ExhaustiveHeap(PiecesStash const &ps, unsigned int npcs)
 EH::~ExhaustiveHeap(){}
 
 /* EXPOSED ********************** */
-void EH::randomPop(std::vector<unsigned int> &combo)
+void EH::giveNextCombo(std::vector<Piece const *> &vec) {
+
+	int i(0);
+
+	_randomPop(_uidCombo);
+	for (unsigned int uid : _uidCombo)
+		vec[i++] = &_ps.uidsHMap().at(uid);
+	return ;
+}
+
+
+/* INTERNAL ********************* */
+void EH::_allocHeap(size_t heap_sizei) {
+
+	Level::array_t def;
+	unsigned int j(0);
+
+	for (auto const &it : _ps.uidsHMap())
+		def[j++] = {it.first, 42u};
+	_heap.resize(heap_sizei, {def});
+	return ;
+}
+
+void EH::_finalizeHeap(unsigned int depth, unsigned int nleaves) {
+
+	size_t const depth_size = powui(PiecesStash::numValidUid, depth);
+	size_t const start_index =
+		(1ll - ll(depth_size)) / (1ll - ll(PiecesStash::numValidUid));
+	size_t const end_index = start_index + depth_size;
+	unsigned int subnleaves = nleaves / PiecesStash::numValidUid;
+	unsigned int i;
+
+	// std::cout << "_finalizeHeap:" << std::endl;
+	// std::cout << "depth: " << depth<< std::endl;
+	// std::cout << "start_index: " << start_index << " -> "
+	// 		  << end_index << "(+" << depth_size << ")" << std::endl;
+	// std::cout << "subnleaves: " << subnleaves << std::endl;
+	i = static_cast<unsigned int>(start_index);
+	for (; i != end_index; i++)
+	{
+		for (unsigned int j = 0; j < PiecesStash::numValidUid; j++)
+			_heap[i].sublvls[j].count = subnleaves;
+	}
+	if (depth < _npcs - 1)
+		_finalizeHeap(depth + 1, subnleaves);
+	return ;
+}
+
+void EH::_randomPop(std::vector<unsigned int> &combo)
 {
 	unsigned int lvldepthi, lvlcount;
 
@@ -112,62 +148,12 @@ void EH::randomPop(std::vector<unsigned int> &combo)
 			// << ": " <<  << std::endl
 			// << ": " <<  << std::endl
 			// << std::endl;
-		while (sum < choice + 1)
-		{
-			sublvl++;
-			sum += lvl->sublvls[sublvl].count;
-			// std::cout << choice << " vs " << sum << std::endl;
-		};
+		while (sum <= choice + 1)
+			sum += lvl->sublvls[sublvl++].count;
 		lvlcount = lvl->sublvls[sublvl].count;
 		lvl->sublvls[sublvl].count--;
 		combo[depth] = lvl->sublvls[sublvl].uid;
 		lvldepthi = lvldepthi * PiecesStash::numValidUid + sublvl;
 	}
-	return ;
-}
-
-
-int							main(void) //debug
-{
-	PiecesStash ps;
-	ExhaustiveHeap em(ps, 4);
-
-	return (0);
-}
-
-/* INTERNAL ********************* */
-void EH::_allocHeap(PiecesStash const &ps, size_t heap_sizei) {
-
-	Level::array_t def;
-	unsigned int j(0);
-
-	for (auto const &it : ps.uidsHMap())
-		def[j++] = {it.first, 42u};
-	_heap.resize(heap_sizei, {def});
-	return ;
-}
-
-void EH::_finalizeHeap(unsigned int depth, unsigned int nleaves) {
-
-	size_t const depth_size = powui(PiecesStash::numValidUid, depth);
-	size_t const start_index =
-		(1ll - ll(depth_size)) / (1ll - ll(PiecesStash::numValidUid));
-	size_t const end_index = start_index + depth_size;
-	unsigned int subnleaves = nleaves / PiecesStash::numValidUid;
-	unsigned int i;
-
-	// std::cout << "_finalizeHeap:" << std::endl;
-	// std::cout << "depth: " << depth<< std::endl;
-	// std::cout << "start_index: " << start_index << " -> "
-	// 		  << end_index << "(+" << depth_size << ")" << std::endl;
-	// std::cout << "subnleaves: " << subnleaves << std::endl;
-	i = static_cast<unsigned int>(start_index);
-	for (; i != end_index; i++)
-	{
-		for (unsigned int j = 0; j < PiecesStash::numValidUid; j++)
-			_heap[i].sublvls[j].count = subnleaves;
-	}
-	if (depth < _npcs - 1)
-		_finalizeHeap(depth + 1, subnleaves);
 	return ;
 }
