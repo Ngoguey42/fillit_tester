@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 11:04:12 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 12:18:38 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 12:31:57 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -73,7 +73,13 @@ struct Piece
 	}
 };
 
-class TasksStash
+namespace lol {
+typedef std::unordered_set<unsigned int> shapehset_t;
+typedef std::unordered_map<unsigned int, Piece> uidhmap_t;
+typedef std::multimap<unsigned int, unsigned int> shapemmap_t;
+}
+
+class ComboGenerator
 {
 private:
 	/* ATTRIBUTES ******************* */
@@ -81,19 +87,18 @@ private:
 	static constexpr unsigned int numValidUid = 113;
 	unsigned int const _pc_count;
 
-	typedef std::unordered_set<unsigned int> shapehset_t;
-	shapehset_t _shapesHSet;/* 19 (Piece.shape) */
+	using shapehset_t = lol::shapehset_t;
+	shapehset_t const _shapesHSet;/* 19 (Piece.shape) */
 
-	typedef std::unordered_map<unsigned int, Piece> uidhmap_t;
-	uidhmap_t _uidsHMap;/* 113 (Piece.uid * Piece) */
+	using uidhmap_t = lol::uidhmap_t;
+	uidhmap_t const _uidsHMap;/* 113 (Piece.uid * Piece) */
 
-	typedef std::multimap<unsigned int, unsigned int> shapemmap_t;
-	shapemmap_t _shapesMMap;/* 113 (Piece.shape * Piece.uid) */
+	using shapemmap_t = lol::shapemmap_t;
+	shapemmap_t const _shapesMMap;/* 113 (Piece.shape * Piece.uid) */
 
 	typedef std::vector<shapemmap_t::const_iterator> uidcombo_t;
-	// typedef std::vector<unsigned int> uidcombo_t;
-	struct Hash {
-		std::size_t operator ()(uidcombo_t const &combo) {
+	struct HashCombo {
+		std::size_t operator ()(uidcombo_t const &combo) const {
 			std::size_t h;
 
 			for (auto const &it : combo)
@@ -101,35 +106,32 @@ private:
 			return 0;
 		}
 	};
-	typedef std::unordered_set<uidcombo_t, Hash> combohset_t;
+	typedef std::unordered_set<uidcombo_t, HashCombo> combohset_t;
 	combohset_t _combosHSet;
 
 public:
 	/* CONSTRUCTION ***************** */
-	TasksStash(unsigned int pc_count) : _pc_count(pc_count){
+	ComboGenerator(unsigned int pc_count, shapehset_t shapesHSet
+			   , uidhmap_t uidsHMap, shapemmap_t shapesMMap)
+		: _pc_count(pc_count), _shapesHSet(shapesHSet)
+		, _uidsHMap(uidsHMap), _shapesMMap(shapesMMap) {
 
 		assert(numShape == _shapesHSet.size());
 		assert(numValidUid == _uidsHMap.size());
 		assert(numValidUid == _shapesMMap.size());
 	}
 
-	~TasksStash(){}
+	~ComboGenerator(){}
 
-	TasksStash() = delete;
-	TasksStash(TasksStash const &src) = delete;
-	TasksStash(TasksStash &&src) = delete;
-	TasksStash &operator=(TasksStash const &rhs) = delete;
-	TasksStash &operator=(TasksStash &&rhs) = delete;
-
-	/* ***************** */
-	// auto generate(unsigned int count);
-
-	// auto begin();
-	// auto end();
+	ComboGenerator() = delete;
+	ComboGenerator(ComboGenerator const &src) = delete;
+	ComboGenerator(ComboGenerator &&src) = delete;
+	ComboGenerator &operator=(ComboGenerator const &rhs) = delete;
+	ComboGenerator &operator=(ComboGenerator &&rhs) = delete;
 
 private:
 	/* INTERNAL ******************** */
-	unsigned int _randomShape(void) {
+	unsigned int _randomShape(void) const {
 
 		int const n = std::rand() % numShape;
 		int i = 0;
@@ -139,7 +141,7 @@ private:
 				return t;
 		assert(false); /* should not be reached */
 	}
-	shapemmap_t::const_iterator _randomPieceOfShape(unsigned int shp) {
+	shapemmap_t::const_iterator _randomPieceOfShape(unsigned int shp) const {
 
 		unsigned int const n = std::rand() % _shapesMMap.count(shp);
 		auto const range = _shapesMMap.equal_range(shp);
@@ -151,13 +153,14 @@ private:
 		assert(false); /* should not be reached */
 	}
 
-	shapemmap_t::const_iterator _randomUid(void) {
+	shapemmap_t::const_iterator _randomUid(void) const {
 
 		return _randomPieceOfShape(_randomShape());
 	}
 
 	/* Circularily increments an iterator over the Multimap */
-	shapemmap_t::const_iterator _nextUid(shapemmap_t::const_iterator const &it){
+	shapemmap_t::const_iterator _nextUid(
+		shapemmap_t::const_iterator const &it) const {
 
 		shapemmap_t::const_iterator ret;
 
@@ -168,7 +171,7 @@ private:
 	}
 
 	/* Generates a combo, may exist in _combosHSet */
-	uidcombo_t _randomComboRaw(void) { //TODO: drop const everywhere
+	uidcombo_t _randomComboRaw(void) const {
 
 		uidcombo_t ret;
 
@@ -178,7 +181,7 @@ private:
 	}
 
 	/* Increments a combo over 1 or more componants */
-	void _incrementCombo(uidcombo_t &combo, uidcombo_t const &comboRand) {
+	void _incrementCombo(uidcombo_t &combo, uidcombo_t const &comboRand) const {
 
 		int level;
 		shapemmap_t::const_iterator it;
@@ -192,7 +195,7 @@ private:
 	}
 
 	/* Generates a combo, not existing in _combosHSet */
-	uidcombo_t _randomCombo(void) {
+	uidcombo_t _randomCombo(void) const {
 
 		uidcombo_t const comboRand(_randomComboRaw());
 		uidcombo_t combo(comboRand);
