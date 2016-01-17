@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 11:04:12 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 12:31:57 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 12:57:17 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -180,7 +180,7 @@ private:
 		return ret;
 	}
 
-	/* Increments a combo over 1 or more componants */
+	/* Increments a combo over 1 or more components */
 	void _incrementCombo(uidcombo_t &combo, uidcombo_t const &comboRand) const {
 
 		int level;
@@ -205,4 +205,41 @@ private:
 		return combo;
 	}
 
+public:
+#define D(V) static_cast<double>((V))
+#define UI(V) static_cast<unsigned int>((V))
+	void gen(unsigned int size) {
+
+		size = UI(std::min(D(size), std::pow(D(numValidUid), D(_pc_count))));
+		_combosHSet.reserve(size);
+		for (int i = 0; i < size; i++)
+			_combosHSet.insert(_randomCombo());
+		return ;
+	}
+
+	void clear(void) {
+
+		_combosHSet.clear();
+		return ;
+	}
+
+	combohset_t::const_iterator begin(void) const {
+
+		return _combosHSet.begin();
+	}
+	combohset_t::const_iterator end(void) const {
+
+		return _combosHSet.end();
+	}
+
+	std::vector<Piece const *> operator * (combohset_t::const_iterator const &it) {
+
+		std::vector<Piece const *> ret;
+		uidcombo_t const &combo = *it;
+
+		ret.reserve(_pc_count);
+		for (auto const &uidIt : combo)
+			ret.push_back(&_uidsHMap.at(uidIt->second));
+		return ret;
+	}
 };
