@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:38:58 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/14 12:57:13 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 15:08:10 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -154,7 +154,7 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 		}
 	}
 	std::cout
-		<< std::atoi(av[2]) << " map(s) of size "
+		<< tasks.size() / 2 << " map(s) of size "
 		<< std::atoi(av[1]) << " generated in ./map" << std::endl;
 	std::cout
 		<< "WORK_TIMEOUT set to " << durToStr(WORK_TIMEOUT) << " ; "
