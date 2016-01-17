@@ -6,20 +6,18 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 16:25:15 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 20:26:37 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/17 20:41:08 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
 #ifndef EXHAUSTIVEHEAP_HPP
 # define EXHAUSTIVEHEAP_HPP
 
-# include <vector>
 # include <array>
 
 # include "IComboGen.hpp"
-# include "PiecesStash.hpp"
 
-class ExhaustiveHeap : IComboGen
+class ExhaustiveHeap : public IComboGen
 {
 
 private:
