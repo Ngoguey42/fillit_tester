@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 16:14:48 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 16:23:53 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/18 19:54:34 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -17,7 +17,7 @@ using PS = PiecesStash;
 /* CONSTRUCTION ***************** */
 PS::PiecesStash() : _shapesHSet{}, _uidsHMap{}, _shapesMMap{}
 {
-	Piece p = {"....", "....", "....", "...."};
+	Piece p = {{"....", "....", "....", "...."}};
 
 	_gen(p, 0, 0);
 	return ;

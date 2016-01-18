@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 20:37:12 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 21:07:29 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/18 19:55:49 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -37,7 +37,7 @@ SHS::~SuperficialHSet() {}
 void SHS::giveNextCombo(std::vector<Piece const *> &vec) {
 
 	auto combo = _randomCombo();
-	int i;
+	int i = 0;
 
 	for (auto const pc_it : combo)
 		vec[i++] = &_ps.uidsHMap().at(pc_it->second);
@@ -62,7 +62,7 @@ SHS::shapemmap_t::const_iterator SHS::_randomPieceOfShape(unsigned int shp) cons
 
 	unsigned int const n = std::rand() % _ps.shapesMMap().count(shp);
 	auto const range = _ps.shapesMMap().equal_range(shp);
-	int i = 0;
+	unsigned int i = 0;
 
 	for (auto it = range.first; it != range.second; ++it)
 		if (i++ == n)
@@ -90,7 +90,7 @@ SHS::uidcombo_t SHS::_randomComboRaw(void) const {
 
 	uidcombo_t ret;
 
-	for (int i = 0; i < _pc_count; i++)
+	for (unsigned int i = 0; i < _pc_count; i++)
 		ret.push_back(_randomUid());
 	return ret;
 }

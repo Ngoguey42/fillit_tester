@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:38:58 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 15:08:10 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/18 19:56:33 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -126,7 +126,7 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 	int to[2] = {0, 0};
 	int diffs = 0;
 
-	for(int i = 0; i < tasks.size(); i += 2)
+	for(unsigned int i = 0; i < tasks.size(); i += 2)
 	{
 		durs[0] += tasks[i].duration;
 		durs[1] += tasks[i + 1].duration;

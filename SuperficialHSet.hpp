@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/17 20:32:26 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/17 20:46:33 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/18 19:55:13 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -32,11 +32,11 @@ private:
 	typedef std::vector<shapemmap_t::const_iterator> uidcombo_t;
 	struct HashCombo {
 		std::size_t operator () (uidcombo_t const &combo) const {
-			std::size_t h;
+			std::size_t h = 0;
 
 			for (auto const &it : combo)
 				h += std::hash<unsigned int>()(it->second);
-			return 0;
+			return h;
 		}
 	};
 	typedef std::unordered_set<uidcombo_t, HashCombo> combohset_t;

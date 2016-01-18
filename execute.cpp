@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:51:03 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/14 13:07:51 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/01/18 19:56:17 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -84,7 +84,7 @@ static int work(UnitTest &t)
 	return 0;
 }
 
-void		run(std::vector<UnitTest> &tasks, char const *const av[])
+void		run(std::vector<UnitTest> &tasks, char const *const [])
 {
 	ThreadPool p(NUM_WORKERS);
 

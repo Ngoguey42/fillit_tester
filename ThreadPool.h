@@ -48,7 +48,7 @@ inline std::vector< std::thread > const &ThreadPool::getWorkers() const
 
 // the constructor just launches some amount of workers
 inline ThreadPool::ThreadPool(size_t threads)
-    :   stop(false), last_report(std::chrono::system_clock::now())
+    :   last_report(std::chrono::system_clock::now()), stop(false)
 {
     for(size_t i = 0;i<threads;++i)
         workers.emplace_back(
