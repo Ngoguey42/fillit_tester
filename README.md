@@ -37,6 +37,7 @@ cd anga ; make ; cd ..
 
 
 todo:
+- solve bin2 superiority
 - dispatch includes in .cpp files
 - use clock instead of chrono for some measures
 - screenshot
