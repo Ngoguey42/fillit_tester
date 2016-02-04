@@ -6,7 +6,7 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/01/28 19:03:57 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/01/28 19:50:59 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/04 06:36:03 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <assert.h> //TO REMOVE LATER
 
-#define qprintf(...) printf(__VA_ARGS__); fflush(stdout)
+#define qprintf(...) printf(__VA_ARGS__)
 
 
 typedef struct	s_vec2i
@@ -327,25 +327,25 @@ void		solver(t_ppool *pool)
 }
 
 t_piece const pcs[] = {
-    {0, 0x10302, 0x401802, 2, 3, {{1, 0},{0, 1},{1, 1},{0, 2}}},
-	{1, 0x702, 0x3802, 3, 2, {{1, 0},{0, 1},{1, 1},{2, 1}}},
-	{2, 0x30202, 0xc01002, 2, 3, {{1, 0},{1, 1},{0, 2},{1, 2}}},
-	{3, 0x20302, 0x801802, 2, 3, {{1, 0},{0, 1},{1, 1},{1, 2}}},
-	{4, 0x306, 0x1806, 3, 2, {{1, 0},{2, 0},{0, 1},{1, 1}}},
-	{5, 0x10301, 0x401801, 2, 3, {{0, 0},{0, 1},{1, 1},{0, 2}}},
-	{6, 0x207, 0x1007, 3, 2, {{0, 0},{1, 0},{2, 0},{1, 1}}},
-	{7, 0x701, 0x3801, 3, 2, {{0, 0},{0, 1},{1, 1},{2, 1}}},
-	{8, 0x603, 0x3003, 3, 2, {{0, 0},{1, 0},{1, 1},{2, 1}}},
-	{9, 0x1010101, 0x200400801, 1, 4, {{0, 0},{0, 1},{0, 2},{0, 3}}},
-	{10, 0x10103, 0x400803, 2, 3, {{0, 0},{1, 0},{0, 1},{0, 2}}},
-	{11, 0x407, 0x2007, 3, 2, {{0, 0},{1, 0},{2, 0},{2, 1}}},
-	{12, 0x30101, 0xc00801, 2, 3, {{0, 0},{0, 1},{0, 2},{1, 2}}},
-	{13, 0x303, 0x1803, 2, 2, {{0, 0},{1, 0},{0, 1},{1, 1}}},
-	{14, 0x20203, 0x801003, 2, 3, {{0, 0},{1, 0},{1, 1},{1, 2}}},
-	{15, 0x107, 0x807, 3, 2, {{0, 0},{1, 0},{2, 0},{0, 1}}},
-	{16, 0x704, 0x3804, 3, 2, {{2, 0},{0, 1},{1, 1},{2, 1}}},
-	{17, 0x20301, 0x801801, 2, 3, {{0, 0},{0, 1},{1, 1},{1, 2}}},
-	{18, 0xf, 0xf, 4, 1, {{0, 0},{1, 0},{2, 0},{3, 0}}},
+    {0, 0x10302, 0x401802, 2, 3, {{1, 0},{0, 1},{1, 1},{0, 2}}, {0, 0}, '\0'},
+	{1, 0x702, 0x3802, 3, 2, {{1, 0},{0, 1},{1, 1},{2, 1}}, {0, 0}, '\0'},
+	{2, 0x30202, 0xc01002, 2, 3, {{1, 0},{1, 1},{0, 2},{1, 2}}, {0, 0}, '\0'},
+	{3, 0x20302, 0x801802, 2, 3, {{1, 0},{0, 1},{1, 1},{1, 2}}, {0, 0}, '\0'},
+	{4, 0x306, 0x1806, 3, 2, {{1, 0},{2, 0},{0, 1},{1, 1}}, {0, 0}, '\0'},
+	{5, 0x10301, 0x401801, 2, 3, {{0, 0},{0, 1},{1, 1},{0, 2}}, {0, 0}, '\0'},
+	{6, 0x207, 0x1007, 3, 2, {{0, 0},{1, 0},{2, 0},{1, 1}}, {0, 0}, '\0'},
+	{7, 0x701, 0x3801, 3, 2, {{0, 0},{0, 1},{1, 1},{2, 1}}, {0, 0}, '\0'},
+	{8, 0x603, 0x3003, 3, 2, {{0, 0},{1, 0},{1, 1},{2, 1}}, {0, 0}, '\0'},
+	{9, 0x1010101, 0x200400801, 1, 4, {{0, 0},{0, 1},{0, 2},{0, 3}}, {0, 0}, '\0'},
+	{10, 0x10103, 0x400803, 2, 3, {{0, 0},{1, 0},{0, 1},{0, 2}}, {0, 0}, '\0'},
+	{11, 0x407, 0x2007, 3, 2, {{0, 0},{1, 0},{2, 0},{2, 1}}, {0, 0}, '\0'},
+	{12, 0x30101, 0xc00801, 2, 3, {{0, 0},{0, 1},{0, 2},{1, 2}}, {0, 0}, '\0'},
+	{13, 0x303, 0x1803, 2, 2, {{0, 0},{1, 0},{0, 1},{1, 1}}, {0, 0}, '\0'},
+	{14, 0x20203, 0x801003, 2, 3, {{0, 0},{1, 0},{1, 1},{1, 2}}, {0, 0}, '\0'},
+	{15, 0x107, 0x807, 3, 2, {{0, 0},{1, 0},{2, 0},{0, 1}}, {0, 0}, '\0'},
+	{16, 0x704, 0x3804, 3, 2, {{2, 0},{0, 1},{1, 1},{2, 1}}, {0, 0}, '\0'},
+	{17, 0x20301, 0x801801, 2, 3, {{0, 0},{0, 1},{1, 1},{1, 2}}, {0, 0}, '\0'},
+	{18, 0xf, 0xf, 4, 1, {{0, 0},{1, 0},{2, 0},{3, 0}}, {0, 0}, '\0'},
 };
 
 #include <stdlib.h>
@@ -379,22 +379,156 @@ t_piece const pcs[] = {
   26 11.000000	EASY
 */
 
-int							main(void)
+#include <unistd.h>
+#include <stdlib.h>
+#include <fcntl.h>
+
+
+bool charsValid(char const buf[(4 + 1) * 4])
+{
+	int sharp_count;
+
+	sharp_count = 0;
+	for (int y = 0; y < 4; y++)
+	{
+		for (int x = 0; x < 4; x++)
+		{
+			if (buf[y * 5 + x] == '#')
+				sharp_count++;
+			else if (buf[y * 5 + x] != '.')
+				return (qprintf("FAILED LINE %d", __LINE__), false);
+		}
+		if (buf[y * 5 + 4] != '\n')
+			return (qprintf("FAILED LINE %d", __LINE__), false);
+	}
+	if (sharp_count != 4)
+		return (qprintf("FAILED LINE %d", __LINE__), false);
+	return true;
+}
+
+unsigned int adjDiff(char const val[(4 + 1) * 4])
+{
+	unsigned int    acc = 0;
+
+	for (int y = 0; y < 4; y++)
+		for (int x = 0; x < 3; x++)
+			if (val[y * 5 + x] == '#' && val[y * 5 + x + 1] == '#')
+				acc++;
+	for (int y = 0; y < 3; y++)
+		for (int x = 0; x < 4; x++)
+			if (val[y * 5 + x] == '#' && val[(y + 1) * 5 + x] == '#')
+				acc++;
+	return acc;
+}
+
+# define SIZE_ARRAY(A) (sizeof((A)) / sizeof(*(A)))
+# define STRIDE_ARRAY(A) (sizeof(*(A)))
+# define END_ARRAY(A) ((void*)(A) + sizeof((A)))
+# define MAX(V1, V2) ((V1) > (V2) ? V1 : V2)
+# define MIN(V1, V2) ((V1) < (V2) ? V1 : V2)
+
+bool match_piece(char const val[(4 + 1) * 4], t_piece const *pc, t_vec2i tl)
+{
+	int x, y;
+
+	for (int dt = 0; dt < 4; dt++)
+	{
+		y = tl.y + pc->dt[dt].y;
+		x = tl.x + pc->dt[dt].x;
+		if (x >= 4 || y >= 4 || val[y * 5 + x] != '#')
+			return false;
+	}
+	return true;
+}
+
+t_vec2i calc_top_left(char const val[(4 + 1) * 4])
+{
+	int minx, miny;
+
+	minx = 4;
+	miny = 4;
+	for (int y = 0; y < 4; y++)
+	{
+		for (int x = 0; x < 4; x++)
+		{
+			if (val[y * 5 + x] == '#')
+			{
+				minx = MIN(x, minx);
+				miny = MIN(y, miny);
+			}
+		}
+	}
+	return (t_vec2i){minx, miny};
+}
+
+void save_piece(char const val[(4 + 1) * 4], t_ppool p[1])
+{
+	t_piece const *pc = pcs;
+	t_vec2i const topleft = calc_top_left(val);
+
+	while ((void*)pc < END_ARRAY(pcs))
+	{
+		if (match_piece(val, pc, topleft))
+		{
+			p->pcs[p->lastpid] = *pc;
+			return ;
+		}
+		pc++;
+	}
+	qprintf("FAILED LINE %d", __LINE__);
+	return ;
+}
+
+int parser(char const *fname, t_ppool p[1])
+{
+	int const fd = open(fname, O_RDONLY);
+	char buf1[(4 + 1) * 4];
+	char buf2[1];
+	int ret;
+	int i;
+
+	i = 0;
+	while ((ret = read(fd, buf1 + i, sizeof(buf1) - i)) > 0)
+	{
+		i += ret;
+		if (i == sizeof(buf1))
+		{
+			if (!charsValid(buf1) || adjDiff(buf1) < 3)
+				return (qprintf("FAILED LINE %d", __LINE__), 1);
+			save_piece(buf1, p);
+			p->lastpid++;
+			qprintf("SAVING\n");
+			ret = read(fd, buf2, 1);
+			if (ret < 0 || *buf2 != '\n')
+				return (qprintf("FAILED LINE %d", __LINE__), 1);
+			i = 0;
+		}
+	}
+	p->lastpid--;
+	close(fd);
+	return (0);
+}
+
+int							main(int ac, char *av[])
 {
 	t_ppool		pool;
 	int			i;
-	int const	max = 23;
+	int const	max_rand = 23;
 
-	/* srand(time(0)); */
-	srand(1);
 	bzero(&pool, sizeof(pool)); //debug
-
-	for (i = 0; i < max; i++)
+	if (ac < 2)
 	{
-		pool.pcs[i] = pcs[rand() % sizeof(pcs) / sizeof(*pcs)];
+		srand(time(0));
+		/* srand(1); */
+		for (i = 0; i < max_rand; i++)
+			pool.pcs[i] = pcs[rand() % sizeof(pcs) / sizeof(*pcs)];
+		pool.lastpid = max_rand - 1;
 	}
-	pool.lastpid = max - 1;
-
+	else
+	{
+		if (parser(av[1], &pool))
+			return (1);
+	}
 	for (i = 'A'; i <= 'Z'; i++)
 		pool.pcs[i - 'A'].character = i;
 
@@ -404,8 +538,8 @@ int							main(void)
 	solver(&pool);
 	printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC);
 
-	p1 = clock();
-	solver(&pool);
-	printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC);
+	/* p1 = clock(); */
+	/* solver(&pool); */
+	/* printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC); */
 	return (0);
 }
