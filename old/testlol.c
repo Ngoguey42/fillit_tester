@@ -6,7 +6,7 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/01/28 19:03:57 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/04 06:36:03 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/04 07:21:45 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,7 +18,7 @@
 #include <string.h>
 #include <assert.h> //TO REMOVE LATER
 
-#define qprintf(...) printf(__VA_ARGS__)
+#define qprintf(...) dprintf(2, __VA_ARGS__)
 
 
 typedef struct	s_vec2i
@@ -213,6 +213,116 @@ static bool		loop_coords3(__uint128_t const m, t_ppool *const pool
 	return false;
 }
 
+
+
+/*
+** __uint128_t *const m		same virtual map as in space_left
+** __uint128_t cmask		current coord mask while recursing
+*/
+static unsigned int follow(__uint128_t *const m, int const w
+						   , __uint128_t *cmask, t_vec2i c)
+{
+	unsigned int space;
+
+	*m |= *cmask;
+	space = 1;
+	/* space = (cmask & *m) ? 0 : 1; */
+	if (c.y > 0) //top (>> 11) (-1y)
+	{
+		*cmask >>= 11;
+		if ((*m & *cmask) == 0)
+			space += follow(m, w, cmask, (t_vec2i){c.x, c.y - 1});
+		*cmask <<= 11;
+	}
+	if (c.y < w - 1) //bottom (<< 11) (+1y)
+	{
+		*cmask <<= 11;
+		if ((*m & *cmask) == 0)
+			space += follow(m, w, cmask, (t_vec2i){c.x, c.y + 1});
+		*cmask >>= 11;
+	}
+	if (c.x > 0) //left (>> 1) (-1x)
+	{
+		*cmask >>= 1;
+		if ((*m & *cmask) == 0)
+			space += follow(m, w, cmask, (t_vec2i){c.x - 1, c.y});
+		*cmask <<= 1;
+	}
+	if (c.x < w - 1) //right (<< 1) (+1x)
+	{
+		*cmask <<= 1;
+		if ((*m & *cmask) == 0)
+			space += follow(m, w, cmask, (t_vec2i){c.x + 1, c.y});
+		*cmask >>= 1;
+	}
+	return space;
+}
+
+/*
+** __uint128_t m			virtual map found counting
+** __uint128_t cmask		current coords mask while iterating
+*/
+static unsigned int space_left(__uint128_t m, int const w)
+{
+	t_vec2i			c;
+	__uint128_t		cmask;
+	__uint128_t		cmask2[1];
+	unsigned int	space;
+	unsigned int	tmp;
+
+	space = 0;
+	c.y = 0;
+	while (c.y < w)
+	{
+		cmask = 1 << (11 * c.y);
+		c.x = 0;
+		while (c.x < w)
+		{
+			if (m & cmask)
+			{
+				*cmask2 = cmask;
+				tmp = follow(&m, w, cmask2, c);
+				if (tmp >= 4)
+					space += tmp;
+			}
+			cmask <<= 1;
+			c.x++;
+		}
+		c.y++;
+	}
+	return space;
+}
+
+static bool		loop_coords3bis(__uint128_t const m, t_ppool *const pool
+								, int const w
+								, int const pid)
+{
+	t_piece const *const	p = pool->pcs + pid;
+	t_vec2i					c;
+	__uint128_t				pmask;
+
+	c.y = 0;
+	while (c.y <= w - p->h)
+	{
+		c.x = 0;
+		pmask = p->mask128 << (11 * c.y);
+		while (c.x <= w - p->w)
+		{
+			if ((pmask & m) == 0)
+			{
+				if (pid == pool->lastpid || loop_coords3(m | pmask, pool, w, pid + 1))
+				{
+					pool->pcs[pid].finalpos = c;
+					return true;
+				}
+			}
+			pmask <<= 1;
+			c.x++;
+		}
+		c.y++;
+	}
+	return false;
+}
 
 
 /*
@@ -497,7 +607,7 @@ int parser(char const *fname, t_ppool p[1])
 				return (qprintf("FAILED LINE %d", __LINE__), 1);
 			save_piece(buf1, p);
 			p->lastpid++;
-			qprintf("SAVING\n");
+			/* qprintf("SAVING\n"); */
 			ret = read(fd, buf2, 1);
 			if (ret < 0 || *buf2 != '\n')
 				return (qprintf("FAILED LINE %d", __LINE__), 1);
