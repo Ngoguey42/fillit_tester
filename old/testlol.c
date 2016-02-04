@@ -6,7 +6,7 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/01/28 19:03:57 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/04 07:21:45 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/04 08:11:28 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -226,7 +226,6 @@ static unsigned int follow(__uint128_t *const m, int const w
 
 	*m |= *cmask;
 	space = 1;
-	/* space = (cmask & *m) ? 0 : 1; */
 	if (c.y > 0) //top (>> 11) (-1y)
 	{
 		*cmask >>= 11;
@@ -265,8 +264,7 @@ static unsigned int follow(__uint128_t *const m, int const w
 static unsigned int space_left(__uint128_t m, int const w)
 {
 	t_vec2i			c;
-	__uint128_t		cmask;
-	__uint128_t		cmask2[1];
+	__uint128_t		cmask[1];
 	unsigned int	space;
 	unsigned int	tmp;
 
@@ -274,18 +272,18 @@ static unsigned int space_left(__uint128_t m, int const w)
 	c.y = 0;
 	while (c.y < w)
 	{
-		cmask = 1 << (11 * c.y);
+		*cmask = ((__uint128_t)1) << (11 * c.y);
 		c.x = 0;
 		while (c.x < w)
 		{
-			if (m & cmask)
+			if ((m & *cmask) == 0)
 			{
-				*cmask2 = cmask;
-				tmp = follow(&m, w, cmask2, c);
+				tmp = follow(&m, w, cmask, c);
+				/* qprintf("TMP %d\n", tmp); */
 				if (tmp >= 4)
 					space += tmp;
 			}
-			cmask <<= 1;
+			*cmask <<= 1;
 			c.x++;
 		}
 		c.y++;
@@ -301,6 +299,9 @@ static bool		loop_coords3bis(__uint128_t const m, t_ppool *const pool
 	t_vec2i					c;
 	__uint128_t				pmask;
 
+	if (space_left(m, w) < (unsigned int)(pool->lastpid - pid + 1) * 4)
+		return false;
+	/* qprintf("TEST\n"); */
 	c.y = 0;
 	while (c.y <= w - p->h)
 	{
@@ -308,9 +309,11 @@ static bool		loop_coords3bis(__uint128_t const m, t_ppool *const pool
 		pmask = p->mask128 << (11 * c.y);
 		while (c.x <= w - p->w)
 		{
+			if (pid == 1)
+				qprintf("%d %d\n", c.x, c.y);
 			if ((pmask & m) == 0)
 			{
-				if (pid == pool->lastpid || loop_coords3(m | pmask, pool, w, pid + 1))
+				if (pid == pool->lastpid || loop_coords3bis(m | pmask, pool, w, pid + 1))
 				{
 					pool->pcs[pid].finalpos = c;
 					return true;
@@ -393,8 +396,10 @@ void		loop_sizes(t_map m, t_ppool *const pool)
 
 		if (w <= 11 && g_use_bitwise)
 		{
-			qprintf("%s with w=%d loop_coords3\n", __FUNCTION__, w);
-			if (loop_coords3(0, pool, w, 0))
+			qprintf("%s with w=%d loop_coords3bis\n", __FUNCTION__, w);
+			if (loop_coords3bis(0, pool, w, 0))
+			/* qprintf("%s with w=%d loop_coords3\n", __FUNCTION__, w); */
+			/* if (loop_coords3(0, pool, w, 0)) */
 			{
 				g_use_bitwise = false;
 				write_map_solve2(m, pool);
@@ -623,7 +628,7 @@ int							main(int ac, char *av[])
 {
 	t_ppool		pool;
 	int			i;
-	int const	max_rand = 23;
+	int const	max_rand = 16;
 
 	bzero(&pool, sizeof(pool)); //debug
 	if (ac < 2)
@@ -648,8 +653,8 @@ int							main(int ac, char *av[])
 	solver(&pool);
 	printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC);
 
-	/* p1 = clock(); */
-	/* solver(&pool); */
-	/* printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC); */
+	p1 = clock();
+	solver(&pool);
+	printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC);
 	return (0);
 }
