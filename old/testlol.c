@@ -6,7 +6,7 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/01/28 19:03:57 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/04 08:11:28 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/08 19:18:14 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -354,6 +354,7 @@ int			ft_sqrtceil(int v)
 /*
 ** Loads loop_coords2's result to t_map
 */
+
 void		write_map_solve2(t_map m, t_ppool *const pool)
 {
 	int				i;
@@ -376,7 +377,7 @@ bool g_use_bitwise = true;
 /*
 ** Tries succesive map size picking the right algorithm
 */
-void		loop_sizes(t_map m, t_ppool *const pool)
+int 		loop_sizes(t_map m, t_ppool *const pool)
 {
 	int			w;
 
@@ -394,12 +395,20 @@ void		loop_sizes(t_map m, t_ppool *const pool)
 		/* 	} */
 		/* } */
 
-		if (w <= 11 && g_use_bitwise)
+		if (w <= 8 && g_use_bitwise)
 		{
-			qprintf("%s with w=%d loop_coords3bis\n", __FUNCTION__, w);
-			if (loop_coords3bis(0, pool, w, 0))
+			/* qprintf("%s with w=%d loop_coords2\n", __FUNCTION__, w); */
+			if (loop_coords2(0, pool, w, 0))
+			{
+				g_use_bitwise = false;
+				write_map_solve2(m, pool);
+				break;
+			}
+		}
+		else if (w <= 11 && g_use_bitwise)
+		{
 			/* qprintf("%s with w=%d loop_coords3\n", __FUNCTION__, w); */
-			/* if (loop_coords3(0, pool, w, 0)) */
+			if (loop_coords3(0, pool, w, 0))
 			{
 				g_use_bitwise = false;
 				write_map_solve2(m, pool);
@@ -408,13 +417,13 @@ void		loop_sizes(t_map m, t_ppool *const pool)
 		}
 		else
 		{
-			qprintf("%s with w=%d loop_coords\n", __FUNCTION__, w);
+			/* qprintf("%s with w=%d loop_coords\n", __FUNCTION__, w); */
 			if (loop_coords(m, pool, w, 0))
 				break;
 		}
 		w++;
 	}
-	return ;
+	return w;
 }
 
 /*
@@ -423,20 +432,20 @@ void		loop_sizes(t_map m, t_ppool *const pool)
 void		solver(t_ppool *pool)
 {
 	char		m[MAP_W][MAP_W];
+	int			w;
 
 	memset(m, '.', sizeof(m));
 
-	loop_sizes(m, pool);
-
+	w = loop_sizes(m, pool);
 
 	int x, y;
-	for (y = 0; y < MAP_W; y++)
+	for (y = 0; y < w; y++)
 	{
-		for (x = 0; x < MAP_W; x++)
+		for (x = 0; x < w; x++)
 		{
-			qprintf("%c ", m[y][x]);
+			printf("%c", m[y][x]);
 		}
-		qprintf("\n");
+		printf("\n");
 	}
 	return ;
 }
@@ -614,7 +623,9 @@ int parser(char const *fname, t_ppool p[1])
 			p->lastpid++;
 			/* qprintf("SAVING\n"); */
 			ret = read(fd, buf2, 1);
-			if (ret < 0 || *buf2 != '\n')
+			if (ret == 0)
+				break ;
+			else if (ret < 0 || *buf2 != '\n')
 				return (qprintf("FAILED LINE %d", __LINE__), 1);
 			i = 0;
 		}
@@ -628,7 +639,7 @@ int							main(int ac, char *av[])
 {
 	t_ppool		pool;
 	int			i;
-	int const	max_rand = 16;
+	int const	max_rand = 1;
 
 	bzero(&pool, sizeof(pool)); //debug
 	if (ac < 2)
@@ -651,10 +662,10 @@ int							main(int ac, char *av[])
 
 	p1 = clock();
 	solver(&pool);
-	printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC);
+	/* printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC); */
 
-	p1 = clock();
-	solver(&pool);
-	printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC);
+	/* p1 = clock(); */
+	/* solver(&pool); */
+	/* printf("%.6f\n", ((double)(clock() - p1)) / (double)CLOCKS_PER_SEC); */
 	return (0);
 }
