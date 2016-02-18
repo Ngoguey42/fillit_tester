@@ -6,7 +6,7 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/02/18 11:04:11 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/18 11:11:38 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/18 12:05:40 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,8 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <fcntl.h>
+
+extern t_piece const pcs[19];
 
 static bool			charsValid(char const buf[(4 + 1) * 4])
 {
@@ -116,7 +118,7 @@ static void			save_piece(char const val[(4 + 1) * 4], t_ppool p[1])
 	return ;
 }
 
-int parser(char const *fname, t_ppool p[1])
+int					flt_parse(char const *fname, t_ppool p[1])
 {
 	int const	fd = open(fname, O_RDONLY);
 	char		buf1[(4 + 1) * 4];

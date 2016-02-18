@@ -6,10 +6,11 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/02/18 11:14:45 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/18 11:15:30 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/18 11:33:07 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "fillit.h"
 
 static bool		loop(
 	__uint128_t const m, t_ppool *const pool, int const w, int const pid)
@@ -44,5 +45,5 @@ static bool		loop(
 bool		flt_solve128(
 	uintmax_t const m, t_ppool *const pool, int const w, int const pid)
 {
-	return (loop_coords64(m, pool, w, pid));
+	return (loop(m, pool, w, pid));
 }

@@ -6,7 +6,7 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/02/18 11:02:41 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/18 11:13:49 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/18 12:06:44 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,15 @@ typedef struct
 	int			lastpid;
 }				t_ppool;
 
+int				flt_parse(char const *fname, t_ppool p[1]);
+void			flt_solve(t_ppool *pool);
 bool			flt_solve64(
 	uintmax_t const m, t_ppool *const pool, int const w, int const pid);
+bool			flt_solve128(
+	uintmax_t const m, t_ppool *const pool, int const w, int const pid);
+bool			flt_solve128_plus(
+	uintmax_t const m, t_ppool *const pool, int const w, int const pid);
+bool			flt_solveptr(
+	t_map m, t_ppool *const pool, int const w, int const pid);
 
 #endif

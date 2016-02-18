@@ -6,9 +6,11 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/02/18 11:13:56 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/18 11:13:56 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/18 11:33:12 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
+
+#include "fillit.h"
 
 /*
 ** Main algorithm (bitwise) when w <= sizeof(uintmax_t)
@@ -51,5 +53,5 @@ static bool		loop(
 bool		flt_solve64(
 	uintmax_t const m, t_ppool *const pool, int const w, int const pid)
 {
-	return (loop_coords64(m, pool, w, pid));
+	return (loop(m, pool, w, pid));
 }
