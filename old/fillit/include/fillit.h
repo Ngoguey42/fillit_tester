@@ -6,7 +6,7 @@
 /*   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2016/02/18 11:02:41 by ngoguey           #+#    #+#             */
-/*   Updated: 2016/02/18 12:06:44 by ngoguey          ###   ########.fr       */
+/*   Updated: 2016/02/18 12:16:29 by ngoguey          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,8 @@
 ** verifier les fonctions interdites
 ** changer les fonctions de string.h pour libft.h
 */
+# include "libft.h"
+# include "ft_debug.h" //remove
 
 # include <stdbool.h> //FROM LIBFT
 # include <stdint.h> //FROM LIBFT
@@ -30,16 +32,6 @@
 # include <time.h> //REMOVE
 # include <string.h> //REMOVE
 # include <assert.h> //TO REMOVE LATER
-
-# define qprintf(...) dprintf(2, __VA_ARGS__) //TO REMOVE
-
-# ifndef LIBFT_H //mettre une libft peut-etre !!!
-#  define SIZE_ARRAY(A) (sizeof((A)) / sizeof(*(A)))
-#  define STRIDE_ARRAY(A) (sizeof(*(A)))
-#  define END_ARRAY(A) ((void*)(A) + sizeof((A)))
-#  define MAX(V1, V2) ((V1) > (V2) ? V1 : V2)
-#  define MIN(V1, V2) ((V1) < (V2) ? V1 : V2)
-# endif
 
 typedef struct	s_vec2i //FROM LIBFT?
 {
