@@ -6,7 +6,7 @@
 //   By: ngoguey <ngoguey@student.42.fr>            +#+  +:+       +#+        //
 //                                                +#+#+#+#+#+   +#+           //
 //   Created: 2016/01/14 11:38:58 by ngoguey           #+#    #+#             //
-//   Updated: 2016/01/18 19:56:33 by ngoguey          ###   ########.fr       //
+//   Updated: 2016/02/18 14:29:58 by ngoguey          ###   ########.fr       //
 //                                                                            //
 // ************************************************************************** //
 
@@ -146,7 +146,9 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 			report_crash(tasks[i]);
 		if (tasks[i + 1].err && errs[1] <= 5)
 			report_crash(tasks[i + 1]);
-		if (tasks[i].output != tasks[i + 1].output)
+		if (tasks[i].timeout == false
+			&& tasks[i + 1].timeout == false
+			&& tasks[i].output != tasks[i + 1].output)
 		{
 			diffs++;
 			if (diffs <= 5 && tasks[i].err == false && tasks[i + 1].err == false)
@@ -175,7 +177,7 @@ void report(std::vector<UnitTest> const &tasks, char const *const av[])
 			<< to[i] << " time out(s)" << std::endl;
 	}
 	std::cout << std::endl;
-	std::cout << diffs << " diffs" << std::endl;
+	std::cout << "\033[41m" << diffs << " diffs\033[0m" << std::endl;
 	std::cout << std::endl;
 	std::cout << "See ./log directory for fatal errors or diffs details" << std::endl;
 	std::cout << "(a maximum of 5 files each are created in ./log)" << std::endl;
