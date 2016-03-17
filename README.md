@@ -5,7 +5,7 @@
 #### The preceding command:
 1. compiles the tester
 2. removes ./map and ./log directories
-3. generates 1000 random .fillit files containing 3 pieces in ./map
+3. generates 1000 random .fillit files containing 3 valid pieces in ./map
 4. runs in parallel the two given binaries over those maps
 5. computes a report, and logs errors in ./log
 
