@@ -9,6 +9,8 @@
 4. runs in parallel the two given binaries over those maps
 5. computes a report, and logs errors in ./log
 
+<BR>
+
 * av[1] pieces per test (0+)
 * av[2] num tests (1+)
 * av[3] binary 1
