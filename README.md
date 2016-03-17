@@ -1,6 +1,6 @@
 
 ```
-** clang++ -O2 -std=c++14 *.cpp && ./a.out 3 1000 ./fillita ./fillitb
+clang++ -O2 -std=c++14 *.cpp && ./a.out 3 1000 ./fillita ./fillitb
 ```
 #### The preceding command:
 1. compiles the tester
